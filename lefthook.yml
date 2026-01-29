@@ -1,0 +1,17 @@
+pre-commit:
+    parallel: true
+    commands:
+        format:
+            run: go fmt ./... && git add .
+        linter:
+            run: golangci-lint run ./...
+
+commit-msg:
+    commands:
+        "check commit message":
+            run: |
+                if ! grep -iqE "^(feat|fix|chore|docs|style|refactor|perf|test): .+" {1}; then
+                  echo "❌ Error: Commit message format is invalid!"
+                  echo "Use: <type>: <description> (e.g., feat: add select menu)"
+                  exit 1
+                fi

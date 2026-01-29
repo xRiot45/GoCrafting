@@ -1,0 +1,13 @@
+# Binaries
+/gocrafting
+bin/
+
+# Dependency
+vendor/
+
+# OS files
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
