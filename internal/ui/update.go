@@ -2,6 +2,7 @@ package ui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/xRiot45/gocrafting/internal/generator"
 )
 
 // Update handles messages (user input) and changes the model state.
@@ -43,6 +44,27 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 			case StateSelectProjectScale:
 				uiModel.CurrentState = StateGenerationDone
+
+				var projectScale string
+				switch uiModel.SelectedOption {
+				case 0:
+					projectScale = "small"
+				case 1:
+					projectScale = "medium"
+				case 2:
+					projectScale = "enterprise"
+				}
+
+				config := generator.ProjectConfig{
+					ProjectName:  uiModel.ProjectName,
+					ModuleName:   uiModel.ModuleName,
+					ProjectScale: projectScale,
+				}
+
+				if err := generator.Forge(config); err != nil {
+					return uiModel, tea.Quit
+				}
+
 				return uiModel, tea.Quit
 			}
 
