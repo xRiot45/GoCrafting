@@ -43,17 +43,13 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				return uiModel, nil
 
 			case StateSelectProjectScale:
+				if uiModel.SelectedOption != 0 {
+					return uiModel, nil
+				}
+
 				uiModel.CurrentState = StateGenerationDone
 
-				var projectScale string
-				switch uiModel.SelectedOption {
-				case 0:
-					projectScale = "small"
-				case 1:
-					projectScale = "medium"
-				case 2:
-					projectScale = "enterprise"
-				}
+				projectScale := "small"
 
 				config := generator.ProjectConfig{
 					ProjectName:  uiModel.ProjectName,
@@ -68,14 +64,9 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				return uiModel, tea.Quit
 			}
 
-		case tea.KeyUp:
-			if uiModel.CurrentState == StateSelectProjectScale && uiModel.SelectedOption > 0 {
-				uiModel.SelectedOption--
-			}
-
-		case tea.KeyDown:
-			if uiModel.CurrentState == StateSelectProjectScale && uiModel.SelectedOption < 2 {
-				uiModel.SelectedOption++
+		case tea.KeyUp, tea.KeyDown:
+			if uiModel.CurrentState == StateSelectProjectScale {
+				uiModel.SelectedOption = 0
 			}
 		}
 	}
