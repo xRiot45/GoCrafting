@@ -18,6 +18,7 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 		case tea.KeyEnter:
 			switch uiModel.CurrentState {
+			// Logic for input project name
 			case StateInputProjectName:
 				userInput := uiModel.TextInputComponent.Value()
 				if userInput == "" {
@@ -31,6 +32,7 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				uiModel.TextInputComponent.Placeholder = "github.com/username/" + userInput
 				return uiModel, nil
 
+			// Logic for input module name
 			case StateInputModuleName:
 				userInput := uiModel.TextInputComponent.Value()
 				if userInput == "" {
@@ -42,31 +44,52 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				uiModel.CurrentState = StateSelectProjectScale
 				return uiModel, nil
 
+			// Logic for select project scale
 			case StateSelectProjectScale:
 				if uiModel.SelectedOption != 0 {
 					return uiModel, nil
 				}
 
+				scales := []string{"Small", "Medium", "Enterprise"}
+
+				uiModel.ProjectScale = scales[uiModel.SelectedOption]
+
+				if uiModel.SelectedOption == 0 {
+					uiModel.CurrentState = StateSelectProjectSmallTemplate
+					uiModel.SelectedOption = 0
+					return uiModel, nil
+				}
+
+				return uiModel, nil
+
+			// Logic for select project template
+			case StateSelectProjectSmallTemplate:
+				templates := []string{"simple-api", "fast-http", "cli-tool", "bot-starter"}
+				uiModel.SelectedTemplate = templates[uiModel.SelectedOption]
+
 				uiModel.CurrentState = StateGenerationDone
 
-				projectScale := "small"
-
 				config := generator.ProjectConfig{
-					ProjectName:  uiModel.ProjectName,
-					ModuleName:   uiModel.ModuleName,
-					ProjectScale: projectScale,
+					ProjectName:      uiModel.ProjectName,
+					ModuleName:       uiModel.ModuleName,
+					ProjectScale:     "small",
+					SelectedTemplate: uiModel.SelectedTemplate,
 				}
 
 				if err := generator.Forge(config); err != nil {
+					uiModel.Err = err
 					return uiModel, tea.Quit
 				}
-
 				return uiModel, tea.Quit
 			}
 
-		case tea.KeyUp, tea.KeyDown:
-			if uiModel.CurrentState == StateSelectProjectScale {
-				uiModel.SelectedOption = 0
+		case tea.KeyUp:
+			if uiModel.CurrentState == StateSelectProjectSmallTemplate && uiModel.SelectedOption > 0 {
+				uiModel.SelectedOption--
+			}
+		case tea.KeyDown:
+			if uiModel.CurrentState == StateSelectProjectSmallTemplate && uiModel.SelectedOption < 3 {
+				uiModel.SelectedOption++
 			}
 		}
 	}

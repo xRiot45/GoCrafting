@@ -10,12 +10,12 @@ import (
 func processTemplate(name string, content []byte, config ProjectConfig) ([]byte, error) {
 	tmpl, err := template.New(name).Parse(string(content))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing template %s: %w", name, err)
+		return nil, fmt.Errorf("failed to parse template %s: %w", name, err)
 	}
 
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, config); err != nil {
-		return nil, fmt.Errorf("error executing template %s: %w", name, err)
+		return nil, fmt.Errorf("failed to execute template %s: %w", name, err)
 	}
 
 	return buf.Bytes(), nil

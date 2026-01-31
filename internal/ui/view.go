@@ -16,27 +16,63 @@ func (uiModel MainModel) View() string {
 	viewString := LogoStyle.Render(logoASCII) + "\n\n"
 	successSymbol := lipgloss.NewStyle().Foreground(lipgloss.Color("#00FF00")).Render("✔")
 
-	// Render Header Status (Project & Module Name)
+	// --- HEADER SECTION (Progress Tracking) ---
+
+	// 1. Project Name
 	if uiModel.ProjectName != "" && uiModel.CurrentState > StateInputProjectName {
-		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Project Name"), uiModel.ProjectName)
-	}
-	if uiModel.ModuleName != "" && uiModel.CurrentState > StateInputModuleName {
-		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Module Name "), uiModel.ModuleName)
+		viewString += fmt.Sprintf("%s %s: %s\n",
+			successSymbol,
+			TitleStyle.Render("Project Name"),
+			uiModel.ProjectName)
 	}
 
+	// 2. Module Name
+	if uiModel.ModuleName != "" && uiModel.CurrentState > StateInputModuleName {
+		viewString += fmt.Sprintf("%s %s: %s\n",
+			successSymbol,
+			TitleStyle.Render("Module Name "),
+			uiModel.ModuleName)
+	}
+
+	// 3. Project Scale (Ditampilkan jika state sudah melewati pemilihan scale)
+	if uiModel.CurrentState > StateSelectProjectScale {
+		viewString += fmt.Sprintf("%s %s: %s\n",
+			successSymbol,
+			TitleStyle.Render("Project Scale"),
+			uiModel.ProjectScale)
+	}
+
+	// 4. Project Template (Ditampilkan jika state sudah melewati pemilihan template / Done)
+	if uiModel.SelectedTemplate != "" && uiModel.CurrentState > StateSelectProjectSmallTemplate {
+		viewString += fmt.Sprintf("%s %s: %s\n",
+			successSymbol,
+			TitleStyle.Render("Template    "),
+			uiModel.SelectedTemplate)
+	}
+
+	// Tambahkan jarak jika header sudah ada isinya
+	if uiModel.CurrentState > StateInputProjectName {
+		viewString += "\n"
+	}
+
+	// --- INTERACTIVE SECTION ---
+
 	switch uiModel.CurrentState {
+	// View for TUI input project name
 	case StateInputProjectName:
 		viewString += TitleStyle.Render("What is the name of your masterpiece?") + "\n"
 		viewString += HintStyle.Render("(e.g., my-project)") + "\n\n"
 		viewString += "  " + uiModel.TextInputComponent.View() + "\n\n"
 		viewString += HintStyle.Render("› press enter to continue")
 
+	// View for TUI input module name
 	case StateInputModuleName:
 		viewString += TitleStyle.Render("Define your Go Module name:") + "\n"
 		viewString += HintStyle.Render("(e.g., github.com/username/my-project)") + "\n\n"
 		viewString += "  " + uiModel.TextInputComponent.View() + "\n\n"
 		viewString += HintStyle.Render("› press enter to continue")
 
+	// View for TUI select project scale
 	case StateSelectProjectScale:
 		viewString += TitleStyle.Render("Choose the project scale:") + "\n\n"
 
@@ -71,10 +107,41 @@ func (uiModel MainModel) View() string {
 		}
 		viewString += "\n" + HintStyle.Render("› currently only Small scale is available for forging")
 
+	// View for TUI select project template
+	case StateSelectProjectSmallTemplate:
+		viewString += TitleStyle.Render("Choose Small Project Template:") + "\n\n"
+
+		options := []string{
+			"Simple REST API (Standard Lib)",
+			"Fast HTTP Server (Fiber/Gin)",
+			"CLI Tool Template (Cobra)",
+			"Telegram Bot Starter",
+		}
+
+		for index, label := range options {
+			cursor := " "
+			txt := label
+			if uiModel.SelectedOption == index {
+				cursor = lipgloss.NewStyle().Foreground(ColorAccent).Render("›")
+				txt = lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render(label)
+			}
+			viewString += fmt.Sprintf("  %s [%d] %s\n", cursor, index+1, txt)
+		}
+		viewString += "\n" + HintStyle.Render("› use arrow keys to move, enter to select")
+
+	// FINAL SUMMARY VIEW
 	case StateGenerationDone:
 		viewString += "\n" + lipgloss.NewStyle().Foreground(ColorGold).Bold(true).Render("✨ Ready to forge your masterpiece!") + "\n\n"
-		viewString += fmt.Sprintf("Final Summary:\n  Project: %s\n  Module:  %s\n  Scale:   Small\n",
-			uiModel.ProjectName, uiModel.ModuleName)
+
+		keyStyle := TitleStyle.Width(14)
+		valStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFF"))
+
+		viewString += "Final Summary:\n"
+		viewString += fmt.Sprintf("  %s %s\n", keyStyle.Render("Project Name"), valStyle.Render(uiModel.ProjectName))
+		viewString += fmt.Sprintf("  %s %s\n", keyStyle.Render("Module Name"), valStyle.Render(uiModel.ModuleName))
+		viewString += fmt.Sprintf("  %s %s\n", keyStyle.Render("Scale"), valStyle.Render(uiModel.ProjectScale))
+		viewString += fmt.Sprintf("  %s %s\n", keyStyle.Render("Template"), valStyle.Render(uiModel.SelectedTemplate))
+		viewString += "\n" + HintStyle.Render("Generating project files... (Simulated)")
 	}
 
 	return viewString
