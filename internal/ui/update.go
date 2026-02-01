@@ -64,31 +64,59 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 			// Logic for select project template
 			case StateSelectProjectSmallTemplate:
-				templates := []string{"simple-api", "fast-http", "cli-tool", "bot-starter"}
+				templates := []string{"simple-api", "fast-http", "cli-tool", "telegram-bot-starter"}
 				uiModel.SelectedTemplate = templates[uiModel.SelectedOption]
 
-				uiModel.CurrentState = StateGenerationDone
+				uiModel.CurrentState = StateSelectSmallPersistence
+				uiModel.SelectedOption = 0
+				return uiModel, nil
+
+			// Logic for select persistence for small project
+			case StateSelectSmallPersistence:
+				dbOptions := []string{"none", "sqlite"}
+
+				if uiModel.SelectedOption >= len(dbOptions) {
+					uiModel.SelectedOption = 0
+				}
+
+				uiModel.Persistence = dbOptions[uiModel.SelectedOption]
 
 				config := generator.ProjectConfig{
 					ProjectName:      uiModel.ProjectName,
 					ModuleName:       uiModel.ModuleName,
 					ProjectScale:     "small",
 					SelectedTemplate: uiModel.SelectedTemplate,
+					Persistence:      uiModel.Persistence,
 				}
 
 				if err := generator.Forge(config); err != nil {
 					uiModel.Err = err
-					return uiModel, tea.Quit
+					return uiModel, nil
 				}
-				return uiModel, tea.Quit
+
+				uiModel.CurrentState = StateGenerationDone
+				return uiModel, nil
 			}
 
 		case tea.KeyUp:
-			if uiModel.CurrentState == StateSelectProjectSmallTemplate && uiModel.SelectedOption > 0 {
+			if uiModel.SelectedOption > 0 {
 				uiModel.SelectedOption--
 			}
+
 		case tea.KeyDown:
-			if uiModel.CurrentState == StateSelectProjectSmallTemplate && uiModel.SelectedOption < 3 {
+			var maxIndex int
+			switch uiModel.CurrentState {
+			case StateSelectProjectScale:
+				maxIndex = 2
+			case StateSelectProjectSmallTemplate:
+				maxIndex = 3
+			case StateSelectSmallPersistence:
+				maxIndex = 1
+			default:
+				maxIndex = 0
+			}
+
+			if uiModel.SelectedOption < maxIndex {
 				uiModel.SelectedOption++
 			}
 		}

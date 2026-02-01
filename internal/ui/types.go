@@ -21,6 +21,9 @@ const (
 	// StateSelectProjectSmallTemplate is the stage where user selects projec template based on small project scale.
 	StateSelectProjectSmallTemplate
 
+	// StateSelectSmallPersistence is the stage where user selects persistance based on small project scale.
+	StateSelectSmallPersistence
+
 	// StateGenerationDone is the final stage where the project is generated.
 	StateGenerationDone
 )
@@ -34,6 +37,7 @@ type MainModel struct {
 	ProjectScale       string          // Project scale
 	SelectedOption     int             // Menu option index (0 or 1)
 	SelectedTemplate   string          // Selected project template
+	Persistence        string          // Selected persistence
 	IsQuitting         bool            // Status of whether the user wants to exit
 	Err                error           // Error message
 }

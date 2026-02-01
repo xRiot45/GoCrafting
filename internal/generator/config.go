@@ -5,6 +5,7 @@ package generator
 type ProjectConfig struct {
 	ProjectName      string
 	ModuleName       string
-	ProjectScale     string // "small", "medium", or "enterprise"
+	ProjectScale     string
 	SelectedTemplate string
+	Persistence      string
 }

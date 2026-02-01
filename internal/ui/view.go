@@ -9,6 +9,13 @@ import (
 
 // View renders the UI view to a string.
 func (uiModel MainModel) View() string {
+	if uiModel.Err != nil {
+		return lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FF0000")).
+			Bold(true).
+			Render(fmt.Sprintf("\n❌ Error Encountered: %v\n\nPress Ctrl+C to exit.", uiModel.Err))
+	}
+
 	if uiModel.IsQuitting {
 		return "Crafting cancelled.\n"
 	}
@@ -48,6 +55,10 @@ func (uiModel MainModel) View() string {
 			successSymbol,
 			TitleStyle.Render("Template    "),
 			uiModel.SelectedTemplate)
+	}
+
+	if uiModel.Persistence != "" && uiModel.CurrentState > StateSelectSmallPersistence {
+		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Persistence "), uiModel.Persistence)
 	}
 
 	// Tambahkan jarak jika header sudah ada isinya
@@ -107,7 +118,7 @@ func (uiModel MainModel) View() string {
 		}
 		viewString += "\n" + HintStyle.Render("› currently only Small scale is available for forging")
 
-	// View for TUI select project template
+	// View for TUI select project Small template
 	case StateSelectProjectSmallTemplate:
 		viewString += TitleStyle.Render("Choose Small Project Template:") + "\n\n"
 
@@ -129,6 +140,29 @@ func (uiModel MainModel) View() string {
 		}
 		viewString += "\n" + HintStyle.Render("› use arrow keys to move, enter to select")
 
+	// View for TUI select persistence
+	case StateSelectSmallPersistence:
+		viewString += TitleStyle.Render("Select Persistence (Database):") + "\n\n"
+
+		options := []struct {
+			label string
+			desc  string
+		}{
+			{"None", "In-memory data, resets on restart"},
+			{"SQLite", "Lightweight file-based database (Recommended)"},
+		}
+
+		for index, opt := range options {
+			cursor := " "
+			label := opt.label
+			if uiModel.SelectedOption == index {
+				cursor = lipgloss.NewStyle().Foreground(ColorAccent).Render("›")
+				label = lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render(opt.label)
+			}
+			viewString += fmt.Sprintf("  %s %-6s - %s\n", cursor, label, HintStyle.Render(opt.desc))
+		}
+		viewString += "\n" + HintStyle.Render("› use arrow keys to move, enter to select")
+
 	// FINAL SUMMARY VIEW
 	case StateGenerationDone:
 		viewString += "\n" + lipgloss.NewStyle().Foreground(ColorGold).Bold(true).Render("✨ Ready to forge your masterpiece!") + "\n\n"
@@ -141,6 +175,7 @@ func (uiModel MainModel) View() string {
 		viewString += fmt.Sprintf("  %s %s\n", keyStyle.Render("Module Name"), valStyle.Render(uiModel.ModuleName))
 		viewString += fmt.Sprintf("  %s %s\n", keyStyle.Render("Scale"), valStyle.Render(uiModel.ProjectScale))
 		viewString += fmt.Sprintf("  %s %s\n", keyStyle.Render("Template"), valStyle.Render(uiModel.SelectedTemplate))
+		viewString += fmt.Sprintf("  %s %s\n", keyStyle.Render("Persistence"), valStyle.Render(uiModel.Persistence))
 		viewString += "\n" + HintStyle.Render("Generating project files... (Simulated)")
 	}
 
