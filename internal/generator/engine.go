@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xRiot45/gocrafting/internal/runner"
 	"github.com/xRiot45/gocrafting/internal/templates"
 )
 
@@ -29,10 +28,6 @@ func Forge(config ProjectConfig) error {
 	templatePath := filepath.Join("small", config.SelectedTemplate)
 	if err := copyResources(templatePath, config); err != nil {
 		return err
-	}
-
-	if err := finalizeProject(config.ProjectName, config); err != nil {
-		return fmt.Errorf("failed to finalize project: %w", err)
 	}
 
 	return nil
@@ -106,31 +101,31 @@ func createMetaFile(config ProjectConfig) error {
 }
 
 // finalizeProject performs final tasks like running 'go mod tidy' and 'go fmt'
-func finalizeProject(projectPath string, config ProjectConfig) error {
-	// 1. Identify packages to install
-	var packagesToInstall []string
+// func finalizeProject(projectPath string, config ProjectConfig) error {
+// 	// 1. Identify packages to install
+// 	var packagesToInstall []string
 
-	// Check Persistence
-	if config.Persistence == "sqlite" {
-		packagesToInstall = append(packagesToInstall, "modernc.org/sqlite")
-	}
+// 	// Check Persistence
+// 	if config.Persistence == "sqlite" {
+// 		packagesToInstall = append(packagesToInstall, "modernc.org/sqlite")
+// 	}
 
-	// 2. Run 'go get' if there is a package that must be installed
-	if len(packagesToInstall) > 0 {
-		if err := runner.GoGet(projectPath, packagesToInstall...); err != nil {
-			return err
-		}
-	}
+// 	// 2. Run 'go get' if there is a package that must be installed
+// 	if len(packagesToInstall) > 0 {
+// 		if err := runner.GoGet(projectPath, packagesToInstall...); err != nil {
+// 			return err
+// 		}
+// 	}
 
-	// 3. Run 'go mod tidy' (Final Cleaning)
-	if err := runner.RunGoModTidy(projectPath); err != nil {
-		return err
-	}
+// 	// 3. Run 'go mod tidy' (Final Cleaning)
+// 	if err := runner.RunGoModTidy(projectPath); err != nil {
+// 		return err
+// 	}
 
-	// 4. Run 'go fmt' (Formatting)
-	if err := runner.RunGoFmt(projectPath); err != nil {
-		fmt.Printf("Warning: %v\n", err)
-	}
+// 	// 4. Run 'go fmt' (Formatting)
+// 	if err := runner.RunGoFmt(projectPath); err != nil {
+// 		fmt.Printf("Warning: %v\n", err)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }

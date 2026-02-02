@@ -9,6 +9,7 @@ import (
 
 // View renders the UI view to a string.
 func (uiModel MainModel) View() string {
+	// 1. TANGKAP ERROR: Jika ada error, tampilkan di sini!
 	if uiModel.Err != nil {
 		return lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FF0000")).
@@ -58,6 +59,7 @@ func (uiModel MainModel) View() string {
 	}
 
 	// 5. Persistence
+	// Tampilkan jika sudah dipilih (Persistence tidak kosong) dan state sudah lewat atau sedang install
 	if uiModel.Persistence != "" && uiModel.CurrentState > StateSelectSmallPersistence {
 		viewString += fmt.Sprintf("%s %s: %s\n",
 			successSymbol,
@@ -167,20 +169,29 @@ func (uiModel MainModel) View() string {
 		}
 		viewString += "\n" + HintStyle.Render("› use arrow keys to move, enter to select")
 
-	// FINAL SUMMARY VIEW
+	// --- NEW: State for Installing Progress ---
+	case StateInstalling:
+		viewString += "\n" + TitleStyle.Render("🚀 Initiating Launch Sequence...") + "\n\n"
+
+		// Tampilkan Spinner & Pesan Status (misal: "Downloading dependencies...")
+		viewString += fmt.Sprintf(" %s %s\n\n", uiModel.Spinner.View(), uiModel.InstallMsg)
+
+		// Tampilkan Progress Bar
+		viewString += " " + uiModel.Progress.View() + "\n\n"
+
+		viewString += HintStyle.Render("Please wait while we craft your masterpiece...")
+
+	// --- UPDATED: Final Success View ---
 	case StateGenerationDone:
-		viewString += "\n" + lipgloss.NewStyle().Foreground(ColorGold).Bold(true).Render("✨ Ready to forge your masterpiece!") + "\n\n"
+		// Pesan Sukses Besar
+		viewString += "\n" + lipgloss.NewStyle().Foreground(ColorGold).Bold(true).Render("✨  Project successfully forged!") + "\n"
+		viewString += lipgloss.NewStyle().Foreground(ColorMuted).Render("   You are ready to go:") + "\n\n"
 
-		keyStyle := TitleStyle.Width(14)
-		valStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFF"))
+		// Instruksi selanjutnya
+		viewString += fmt.Sprintf("   cd %s\n", uiModel.ProjectName)
+		viewString += "   go run .\n\n"
 
-		viewString += "Final Summary:\n"
-		viewString += fmt.Sprintf("  %s %s\n", keyStyle.Render("Project Name"), valStyle.Render(uiModel.ProjectName))
-		viewString += fmt.Sprintf("  %s %s\n", keyStyle.Render("Module Name"), valStyle.Render(uiModel.ModuleName))
-		viewString += fmt.Sprintf("  %s %s\n", keyStyle.Render("Scale"), valStyle.Render(uiModel.ProjectScale))
-		viewString += fmt.Sprintf("  %s %s\n", keyStyle.Render("Template"), valStyle.Render(uiModel.SelectedTemplate))
-		viewString += fmt.Sprintf("  %s %s\n", keyStyle.Render("Persistence"), valStyle.Render(uiModel.Persistence))
-		viewString += "\n" + HintStyle.Render("Generating project files... (Simulated)")
+		viewString += HintStyle.Render("Press Enter to exit.")
 	}
 
 	return viewString
