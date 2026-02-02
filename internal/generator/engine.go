@@ -9,21 +9,33 @@ import (
 	"strings"
 	"time"
 
+	"github.com/xRiot45/gocrafting/internal/runner"
 	"github.com/xRiot45/gocrafting/internal/templates"
 )
 
 // Forge is the main entry point to initialize a new project.
 func Forge(config ProjectConfig) error {
+	// 1. Create root project
 	if err := os.MkdirAll(config.ProjectName, 0750); err != nil {
 		return fmt.Errorf("failed to create project folder: %w", err)
 	}
 
+	// 2. Generating project metadata file
 	if err := createMetaFile(config); err != nil {
 		return fmt.Errorf("failed to create metadata file: %w", err)
 	}
 
+	// 3. Copy project template
 	templatePath := filepath.Join("small", config.SelectedTemplate)
-	return copyResources(templatePath, config)
+	if err := copyResources(templatePath, config); err != nil {
+		return err
+	}
+
+	if err := finalizeProject(config.ProjectName, config); err != nil {
+		return fmt.Errorf("failed to finalize project: %w", err)
+	}
+
+	return nil
 }
 
 // copyResources scans internal/templates and copies them to the destination.
@@ -72,6 +84,7 @@ func forgeFile(sourcePath, targetPath string, config ProjectConfig) error {
 	return os.WriteFile(targetPath, processedContent, 0600)
 }
 
+// createMetaFile creates the project metadata file.
 func createMetaFile(config ProjectConfig) error {
 	meta := ProjectMeta{
 		CLIVersion:  "v1.0.0",
@@ -90,4 +103,34 @@ func createMetaFile(config ProjectConfig) error {
 
 	targetPath := filepath.Join(config.ProjectName, "gocrafting-cli.json")
 	return os.WriteFile(targetPath, fileContent, 0600)
+}
+
+// finalizeProject performs final tasks like running 'go mod tidy' and 'go fmt'
+func finalizeProject(projectPath string, config ProjectConfig) error {
+	// 1. Identify packages to install
+	var packagesToInstall []string
+
+	// Check Persistence
+	if config.Persistence == "sqlite" {
+		packagesToInstall = append(packagesToInstall, "modernc.org/sqlite")
+	}
+
+	// 2. Run 'go get' if there is a package that must be installed
+	if len(packagesToInstall) > 0 {
+		if err := runner.GoGet(projectPath, packagesToInstall...); err != nil {
+			return err
+		}
+	}
+
+	// 3. Run 'go mod tidy' (Final Cleaning)
+	if err := runner.RunGoModTidy(projectPath); err != nil {
+		return err
+	}
+
+	// 4. Run 'go fmt' (Formatting)
+	if err := runner.RunGoFmt(projectPath); err != nil {
+		fmt.Printf("Warning: %v\n", err)
+	}
+
+	return nil
 }

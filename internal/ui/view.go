@@ -127,7 +127,7 @@ func (uiModel MainModel) View() string {
 		viewString += TitleStyle.Render("Choose Small Project Template:") + "\n\n"
 
 		options := []string{
-			"Simple REST API (Standard Lib)",
+			"Simple REST API (net/http)",
 			"Fast HTTP Server (Fiber/Gin)",
 			"CLI Tool Template (Cobra)",
 			"Telegram Bot Starter",

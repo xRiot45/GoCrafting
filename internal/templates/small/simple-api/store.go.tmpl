@@ -1,0 +1,22 @@
+package main
+
+import (
+	"database/sql"
+
+	_ "modernc.org/sqlite"
+)
+
+type SQLiteStore struct {
+	db *sql.DB
+}
+
+func NewStore() (*SQLiteStore, error) {
+	db, err := sql.Open("sqlite", "./data.db") 
+	if err != nil {
+		return nil, err
+	}
+
+    return &SQLiteStore{
+		db: db,
+	}, nil
+}

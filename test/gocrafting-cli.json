@@ -1,0 +1,9 @@
+{
+  "cli_version": "v1.0.0",
+  "project_name": "test",
+  "module_name": "test",
+  "project_scale": "small",
+  "selected_template": "simple-api",
+  "persistence": "sqlite",
+  "created_at": "2026-02-02T21:10:20+07:00"
+}
