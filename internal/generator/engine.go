@@ -1,11 +1,13 @@
 package generator
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/xRiot45/gocrafting/internal/templates"
 )
@@ -14,6 +16,10 @@ import (
 func Forge(config ProjectConfig) error {
 	if err := os.MkdirAll(config.ProjectName, 0750); err != nil {
 		return fmt.Errorf("failed to create project folder: %w", err)
+	}
+
+	if err := createMetaFile(config); err != nil {
+		return fmt.Errorf("failed to create metadata file: %w", err)
 	}
 
 	templatePath := filepath.Join("small", config.SelectedTemplate)
@@ -64,4 +70,24 @@ func forgeFile(sourcePath, targetPath string, config ProjectConfig) error {
 	}
 
 	return os.WriteFile(targetPath, processedContent, 0600)
+}
+
+func createMetaFile(config ProjectConfig) error {
+	meta := ProjectMeta{
+		CLIVersion:  "v1.0.0",
+		Name:        config.ProjectName,
+		Module:      config.ModuleName,
+		Scale:       config.ProjectScale,
+		Template:    config.SelectedTemplate,
+		Persistence: config.Persistence,
+		CreatedAt:   time.Now().Format(time.RFC3339),
+	}
+
+	fileContent, err := json.MarshalIndent(meta, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	targetPath := filepath.Join(config.ProjectName, "gocrafting-cli.json")
+	return os.WriteFile(targetPath, fileContent, 0600)
 }

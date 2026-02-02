@@ -95,7 +95,7 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				uiModel.CurrentState = StateGenerationDone
-				return uiModel, nil
+				return uiModel, tea.Quit
 			}
 
 		case tea.KeyUp:

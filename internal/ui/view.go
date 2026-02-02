@@ -41,7 +41,7 @@ func (uiModel MainModel) View() string {
 			uiModel.ModuleName)
 	}
 
-	// 3. Project Scale (Ditampilkan jika state sudah melewati pemilihan scale)
+	// 3. Project Scale
 	if uiModel.CurrentState > StateSelectProjectScale {
 		viewString += fmt.Sprintf("%s %s: %s\n",
 			successSymbol,
@@ -49,7 +49,7 @@ func (uiModel MainModel) View() string {
 			uiModel.ProjectScale)
 	}
 
-	// 4. Project Template (Ditampilkan jika state sudah melewati pemilihan template / Done)
+	// 4. Project Template
 	if uiModel.SelectedTemplate != "" && uiModel.CurrentState > StateSelectProjectSmallTemplate {
 		viewString += fmt.Sprintf("%s %s: %s\n",
 			successSymbol,
@@ -57,8 +57,12 @@ func (uiModel MainModel) View() string {
 			uiModel.SelectedTemplate)
 	}
 
+	// 5. Persistence
 	if uiModel.Persistence != "" && uiModel.CurrentState > StateSelectSmallPersistence {
-		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Persistence "), uiModel.Persistence)
+		viewString += fmt.Sprintf("%s %s: %s\n",
+			successSymbol,
+			TitleStyle.Render("Persistence "),
+			uiModel.Persistence)
 	}
 
 	// Tambahkan jarak jika header sudah ada isinya
