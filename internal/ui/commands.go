@@ -5,7 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/xRiot45/gocrafting/internal/core"
-	"github.com/xRiot45/gocrafting/internal/features/small"
+	"github.com/xRiot45/gocrafting/internal/features"
 	"github.com/xRiot45/gocrafting/internal/runner"
 )
 
@@ -29,25 +29,19 @@ type InstallErrorMsg error
 // Cmd 1: Generate Files (Memanggil Logic di Features)
 func generateFilesCmd(config core.ProjectConfig) tea.Cmd {
 	return func() tea.Msg {
-		// UX: Tambah jeda sedikit biar spinner kelihatan muter
 		time.Sleep(time.Millisecond * 800)
 
-		var err error
-
-		// ROUTING: Panggil generator sesuai Scale
-		switch config.ProjectScale {
-		case "Small":
-			err = small.Generate(config)
-		case "Medium":
-			// err = medium.Generate(config) // Nanti
-		default:
-			// Default fallback jika scale tidak dikenali
-			err = small.Generate(config)
-		}
-
+		// LOGIC BARU: Minta Provider berdasarkan Scale dari Config
+		provider, err := features.GetProvider(config.ProjectScale)
 		if err != nil {
 			return InstallErrorMsg(err)
 		}
+
+		// Jalankan Generate dari provider yang didapat (Small/Medium/dll)
+		if err := provider.Generate(config); err != nil {
+			return InstallErrorMsg(err)
+		}
+
 		return FilesCreatedMsg{}
 	}
 }

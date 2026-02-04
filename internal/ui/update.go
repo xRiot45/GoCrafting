@@ -5,28 +5,21 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/xRiot45/gocrafting/internal/core"
-	"github.com/xRiot45/gocrafting/internal/features/small"
+	"github.com/xRiot45/gocrafting/internal/features"
 )
 
-// Update handles messages (user input) and changes the model state.
+// Update handles messages and system events, updating the TUI state and returning commands.
 func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := message.(type) {
 
-	// =========================================================
-	// 1. HANDLER ASYNC PROCESS (Generate -> Install -> Format)
-	// =========================================================
-
-	// Step 1 Selesai: File Berhasil Dibuat
+	// --- HANDLER ASYNC (Tetap Sama) ---
 	case FilesCreatedMsg:
 		uiModel.InstallMsg = "Downloading dependencies..."
-		// Update progress ke 30%
-		progressCmd := uiModel.Progress.SetPercent(0.3)
-		cmds = append(cmds, progressCmd)
+		cmds = append(cmds, uiModel.Progress.SetPercent(0.3))
 
-		// Lanjut ke Step 2: Download Dependencies
-		// Kita buat config ulang atau passing dari sebelumnya (disini kita recreate sederhana)
+		// Recreate config for context
 		config := core.ProjectConfig{
 			ProjectName:      uiModel.ProjectName,
 			ModuleName:       uiModel.ModuleName,
@@ -34,42 +27,23 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			SelectedTemplate: uiModel.SelectedTemplate,
 			Persistence:      uiModel.Persistence,
 		}
-		// Jalankan command install (Visual Only, karena logic asli sudah di features)
 		cmds = append(cmds, installDepsCmd(uiModel.ProjectName, config))
 
-	// Step 2 Selesai: Dependencies Berhasil Diinstall
 	case DepsInstalledMsg:
 		uiModel.InstallMsg = "Polishing code with go fmt..."
-		// Update progress ke 80%
-		progressCmd := uiModel.Progress.SetPercent(0.8)
-		cmds = append(cmds, progressCmd)
-
-		// Lanjut ke Step 3: Formatting Code
+		cmds = append(cmds, uiModel.Progress.SetPercent(0.8))
 		cmds = append(cmds, formatCodeCmd(uiModel.ProjectName))
 
-	// Step 3 Selesai: Formatting Selesai (FINAL)
 	case ProjectFormattedMsg:
 		uiModel.InstallMsg = "Done!"
-		// Update progress ke 100%
-		progressCmd := uiModel.Progress.SetPercent(1.0)
-		cmds = append(cmds, progressCmd)
-
-		// Pindah ke State Selesai untuk menampilkan Summary
+		cmds = append(cmds, uiModel.Progress.SetPercent(1.0))
 		uiModel.CurrentState = StateGenerationDone
-
-		// Opsional: Jika ingin langsung keluar otomatis setelah selesai, uncomment baris ini:
-		// return uiModel, tea.Quit
-
 		return uiModel, tea.Batch(cmds...)
 
-	// Jika Terjadi Error di tengah proses
 	case InstallErrorMsg:
 		uiModel.Err = msg
 		return uiModel, tea.Quit
-
-	// =========================================================
-	// 2. HANDLER KOMPONEN UI (Spinner & Progress Bar)
-	// =========================================================
+	// ----------------------------------
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd
@@ -81,10 +55,6 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		uiModel.Progress = progressModel.(progress.Model)
 		cmds = append(cmds, cmd)
 
-	// =========================================================
-	// 3. HANDLER INPUT KEYBOARD
-	// =========================================================
-
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
@@ -92,113 +62,95 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			return uiModel, tea.Quit
 
 		case tea.KeyEnter:
-			// Jika sudah selesai generated, Enter akan keluar aplikasi
 			if uiModel.CurrentState == StateGenerationDone {
 				return uiModel, tea.Quit
 			}
 
 			switch uiModel.CurrentState {
-			// Logic for input project name
 			case StateInputProjectName:
-				userInput := uiModel.TextInputComponent.Value()
-				if userInput == "" {
+				// ... (Logic Input Name Tetap Sama)
+				val := uiModel.TextInputComponent.Value()
+				if val == "" {
 					return uiModel, nil
 				}
-				uiModel.ProjectName = userInput
+				uiModel.ProjectName = val
 				uiModel.CurrentState = StateInputModuleName
 				uiModel.TextInputComponent.Reset()
-				uiModel.TextInputComponent.Placeholder = "github.com/username/" + userInput
+				uiModel.TextInputComponent.Placeholder = "github.com/username/" + val
 				return uiModel, nil
 
-			// Logic for input module name
 			case StateInputModuleName:
-				userInput := uiModel.TextInputComponent.Value()
-				if userInput == "" {
-					userInput = "github.com/username/" + uiModel.ProjectName
+				// ... (Logic Input Module Tetap Sama)
+				val := uiModel.TextInputComponent.Value()
+				if val == "" {
+					val = "github.com/username/" + uiModel.ProjectName
 				}
-				uiModel.ModuleName = userInput
+				uiModel.ModuleName = val
 				uiModel.TextInputComponent.Blur()
 				uiModel.CurrentState = StateSelectProjectScale
 				return uiModel, nil
 
-			// Logic for select project scale
+			// 1. SELECT SCALE (Titik Penentuan)
 			case StateSelectProjectScale:
-				// Saat ini hanya Small yang aktif (index 0)
-				// Jika pilih Medium/Enterprise (index > 0), kita block dulu atau biarkan
-				if uiModel.SelectedOption != 0 {
+				scales := []string{"Small", "Medium", "Enterprise"}
+				if uiModel.SelectedOption >= len(scales) {
 					return uiModel, nil
 				}
 
-				scales := []string{"Small", "Medium", "Enterprise"}
-				uiModel.ProjectScale = scales[uiModel.SelectedOption]
+				selectedScale := scales[uiModel.SelectedOption]
 
-				// Reset option untuk menu selanjutnya
+				// VALIDASI: Cek apakah scale ini sudah ada implementasinya?
+				_, err := features.GetProvider(selectedScale)
+				if err != nil {
+					// Jika error (misal Medium belum ada), tampilkan error di UI atau ignore
+					// Disini kita return nil agar user tetap di menu ini
+					uiModel.Err = err
+					return uiModel, nil
+				}
+
+				// Jika valid, simpan scale dan lanjut
+				uiModel.ProjectScale = selectedScale
+				uiModel.Err = nil // Clear error jika ada sebelumnya
 				uiModel.SelectedOption = 0
-
-				// Pindah ke pemilihan Template (Generic State)
 				uiModel.CurrentState = StateSelectTemplate
 				return uiModel, nil
 
-			// Logic for select project template (DINAMIS)
+			// 2. SELECT TEMPLATE (Dinamic via Interface)
 			case StateSelectTemplate:
-				var options []string
+				provider, _ := features.GetProvider(uiModel.ProjectScale)
+				// UI TIDAK PEDULI INI SMALL ATAU MEDIUM
+				// UI cuma panggil: provider.GetTemplates()
+				options := provider.GetTemplates()
 
-				// Cek Scale apa yang aktif, ambil opsi dari feature terkait
-				switch uiModel.ProjectScale {
-				case "Small":
-					options = small.GetTemplates()
-				case "Medium":
-					// options = medium.GetTemplates()
-					options = []string{"Standard API"} // Placeholder
-				default:
-					options = []string{"Default"}
-				}
-
-				// Simpan pilihan template
 				uiModel.SelectedTemplate = options[uiModel.SelectedOption]
-
-				// Pindah ke pemilihan Persistence
 				uiModel.SelectedOption = 0
 				uiModel.CurrentState = StateSelectPersistence
 				return uiModel, nil
 
-			// Logic for select persistence (TRIGGER INSTALL)
+			// 3. SELECT PERSISTENCE (Dinamic via Interface)
 			case StateSelectPersistence:
-				var dbOptions []string
+				provider, _ := features.GetProvider(uiModel.ProjectScale)
+				dbOptions := provider.GetPersistenceOptions()
 
-				// Cek Scale apa yang aktif, ambil opsi DB dari feature terkait
-				switch uiModel.ProjectScale {
-				case "Small":
-					dbOptions = small.GetPersistence()
-				case "Medium":
-					// dbOptions = medium.GetPersistence()
-					dbOptions = []string{"None"} // Placeholder
-				default:
-					dbOptions = []string{"None"}
-				}
-
-				// Safety check index
 				if uiModel.SelectedOption >= len(dbOptions) {
 					uiModel.SelectedOption = 0
 				}
 				uiModel.Persistence = dbOptions[uiModel.SelectedOption]
 
-				// --- MULAI INSTALLASI ---
+				// TRIGGER INSTALLATION
 				uiModel.CurrentState = StateInstalling
 				uiModel.InstallMsg = "Forging project files..."
 
 				config := core.ProjectConfig{
 					ProjectName:      uiModel.ProjectName,
 					ModuleName:       uiModel.ModuleName,
-					ProjectScale:     uiModel.ProjectScale, // Gunakan dynamic scale
+					ProjectScale:     uiModel.ProjectScale,
 					SelectedTemplate: uiModel.SelectedTemplate,
 					Persistence:      uiModel.Persistence,
 				}
 
-				// Mulai Spinner dan Jalankan Command Generate Files
 				cmds = append(cmds, uiModel.Spinner.Tick)
-				cmds = append(cmds, generateFilesCmd(config))
-
+				cmds = append(cmds, generateFilesCmd(config)) // Command generic
 				return uiModel, tea.Batch(cmds...)
 			}
 
@@ -210,29 +162,22 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyDown:
 			var maxIndex int
 
-			// Hitung Max Index secara dinamis berdasarkan State & Scale
+			// LOGIC MAX INDEX (Sangat Bersih Sekarang)
 			switch uiModel.CurrentState {
 			case StateSelectProjectScale:
-				maxIndex = 2 // Small, Medium, Enterprise
+				maxIndex = 2
 
 			case StateSelectTemplate:
-				// Hitung jumlah template yang tersedia
-				if uiModel.ProjectScale == "Small" {
-					maxIndex = len(small.GetTemplates()) - 1
-				} else {
-					maxIndex = 0 // Placeholder medium
+				// Tanya Provider: "Punya berapa template?"
+				if provider, err := features.GetProvider(uiModel.ProjectScale); err == nil {
+					maxIndex = len(provider.GetTemplates()) - 1
 				}
 
 			case StateSelectPersistence:
-				// Hitung jumlah opsi DB yang tersedia
-				if uiModel.ProjectScale == "Small" {
-					maxIndex = len(small.GetPersistence()) - 1
-				} else {
-					maxIndex = 0
+				// Tanya Provider: "Punya berapa opsi DB?"
+				if provider, err := features.GetProvider(uiModel.ProjectScale); err == nil {
+					maxIndex = len(provider.GetPersistenceOptions()) - 1
 				}
-
-			default:
-				maxIndex = 0
 			}
 
 			if uiModel.SelectedOption < maxIndex {
@@ -241,7 +186,6 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Update text input components only if in typing mode
 	if uiModel.CurrentState == StateInputProjectName || uiModel.CurrentState == StateInputModuleName {
 		var cmd tea.Cmd
 		uiModel.TextInputComponent, cmd = uiModel.TextInputComponent.Update(message)
