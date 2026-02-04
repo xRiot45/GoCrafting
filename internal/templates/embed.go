@@ -1,9 +1,11 @@
-// Package templates handles the embedded filesystem for project blueprints.
+// Package templates handles the embedded static files for project generation.
 package templates
 
-import "embed"
+import (
+	"embed"
+)
 
-// FS holds all template files within this directory.
+// ProjectTemplates holds the embedded filesystem containing all project templates (small, medium, etc).
 //
 //go:embed all:*
-var FS embed.FS
+var ProjectTemplates embed.FS

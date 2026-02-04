@@ -23,12 +23,11 @@ consistent, idiomatic, and enterprise-ready project structures.`,
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Start a new project canvas",
-	// We use _ for unused parameters to satisfy the linter.
 	Run: func(_ *cobra.Command, _ []string) {
-		// Initialize and run the Bubble Tea TUI program.
-		p := tea.NewProgram(ui.InitialModel())
+		p := tea.NewProgram(ui.New())
+
 		if _, err := p.Run(); err != nil {
-			fmt.Printf("Alas, there's been an error: %v", err)
+			fmt.Printf("Alas, there's been an error: %v\n", err)
 			os.Exit(1)
 		}
 	},
@@ -37,7 +36,6 @@ var initCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main().
 func Execute() {
-	// Register the 'init' sub-command.
 	rootCmd.AddCommand(initCmd)
 
 	if err := rootCmd.Execute(); err != nil {

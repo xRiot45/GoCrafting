@@ -4,7 +4,8 @@ import (
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/xRiot45/gocrafting/internal/generator"
+	"github.com/xRiot45/gocrafting/internal/core"
+	"github.com/xRiot45/gocrafting/internal/features/small"
 )
 
 // Update handles messages (user input) and changes the model state.
@@ -25,14 +26,15 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, progressCmd)
 
 		// Lanjut ke Step 2: Download Dependencies
-		config := generator.ProjectConfig{
+		// Kita buat config ulang atau passing dari sebelumnya (disini kita recreate sederhana)
+		config := core.ProjectConfig{
 			ProjectName:      uiModel.ProjectName,
 			ModuleName:       uiModel.ModuleName,
-			ProjectScale:     "small",
+			ProjectScale:     uiModel.ProjectScale,
 			SelectedTemplate: uiModel.SelectedTemplate,
 			Persistence:      uiModel.Persistence,
 		}
-		// Jalankan command install (cek commands.go)
+		// Jalankan command install (Visual Only, karena logic asli sudah di features)
 		cmds = append(cmds, installDepsCmd(uiModel.ProjectName, config))
 
 	// Step 2 Selesai: Dependencies Berhasil Diinstall
@@ -121,46 +123,74 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 			// Logic for select project scale
 			case StateSelectProjectScale:
+				// Saat ini hanya Small yang aktif (index 0)
+				// Jika pilih Medium/Enterprise (index > 0), kita block dulu atau biarkan
 				if uiModel.SelectedOption != 0 {
 					return uiModel, nil
 				}
+
 				scales := []string{"Small", "Medium", "Enterprise"}
 				uiModel.ProjectScale = scales[uiModel.SelectedOption]
-				if uiModel.SelectedOption == 0 {
-					uiModel.CurrentState = StateSelectProjectSmallTemplate
-					uiModel.SelectedOption = 0
-					return uiModel, nil
-				}
+
+				// Reset option untuk menu selanjutnya
+				uiModel.SelectedOption = 0
+
+				// Pindah ke pemilihan Template (Generic State)
+				uiModel.CurrentState = StateSelectTemplate
 				return uiModel, nil
 
-			// Logic for select project template
-			case StateSelectProjectSmallTemplate:
-				templates := []string{"simple-api", "fast-http", "cli-tool", "telegram-bot-starter"}
-				uiModel.SelectedTemplate = templates[uiModel.SelectedOption]
-				uiModel.CurrentState = StateSelectSmallPersistence
+			// Logic for select project template (DINAMIS)
+			case StateSelectTemplate:
+				var options []string
+
+				// Cek Scale apa yang aktif, ambil opsi dari feature terkait
+				switch uiModel.ProjectScale {
+				case "Small":
+					options = small.GetTemplates()
+				case "Medium":
+					// options = medium.GetTemplates()
+					options = []string{"Standard API"} // Placeholder
+				default:
+					options = []string{"Default"}
+				}
+
+				// Simpan pilihan template
+				uiModel.SelectedTemplate = options[uiModel.SelectedOption]
+
+				// Pindah ke pemilihan Persistence
 				uiModel.SelectedOption = 0
+				uiModel.CurrentState = StateSelectPersistence
 				return uiModel, nil
 
 			// Logic for select persistence (TRIGGER INSTALL)
-			case StateSelectSmallPersistence:
-				dbOptions := []string{"None", "SQLite"}
+			case StateSelectPersistence:
+				var dbOptions []string
 
+				// Cek Scale apa yang aktif, ambil opsi DB dari feature terkait
+				switch uiModel.ProjectScale {
+				case "Small":
+					dbOptions = small.GetPersistence()
+				case "Medium":
+					// dbOptions = medium.GetPersistence()
+					dbOptions = []string{"None"} // Placeholder
+				default:
+					dbOptions = []string{"None"}
+				}
+
+				// Safety check index
 				if uiModel.SelectedOption >= len(dbOptions) {
 					uiModel.SelectedOption = 0
 				}
 				uiModel.Persistence = dbOptions[uiModel.SelectedOption]
 
-				// --- PERUBAHAN UTAMA DI SINI ---
-				// Kita tidak memanggil generator.Forge() secara langsung.
-				// Kita pindah ke StateInstalling dan memicu command chain.
-
+				// --- MULAI INSTALLASI ---
 				uiModel.CurrentState = StateInstalling
 				uiModel.InstallMsg = "Forging project files..."
 
-				config := generator.ProjectConfig{
+				config := core.ProjectConfig{
 					ProjectName:      uiModel.ProjectName,
 					ModuleName:       uiModel.ModuleName,
-					ProjectScale:     "small",
+					ProjectScale:     uiModel.ProjectScale, // Gunakan dynamic scale
 					SelectedTemplate: uiModel.SelectedTemplate,
 					Persistence:      uiModel.Persistence,
 				}
@@ -179,13 +209,28 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 		case tea.KeyDown:
 			var maxIndex int
+
+			// Hitung Max Index secara dinamis berdasarkan State & Scale
 			switch uiModel.CurrentState {
 			case StateSelectProjectScale:
-				maxIndex = 2
-			case StateSelectProjectSmallTemplate:
-				maxIndex = 3
-			case StateSelectSmallPersistence:
-				maxIndex = 1
+				maxIndex = 2 // Small, Medium, Enterprise
+
+			case StateSelectTemplate:
+				// Hitung jumlah template yang tersedia
+				if uiModel.ProjectScale == "Small" {
+					maxIndex = len(small.GetTemplates()) - 1
+				} else {
+					maxIndex = 0 // Placeholder medium
+				}
+
+			case StateSelectPersistence:
+				// Hitung jumlah opsi DB yang tersedia
+				if uiModel.ProjectScale == "Small" {
+					maxIndex = len(small.GetPersistence()) - 1
+				} else {
+					maxIndex = 0
+				}
+
 			default:
 				maxIndex = 0
 			}

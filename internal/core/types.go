@@ -1,5 +1,5 @@
-// Package generator provides the engine and configuration for project creation.
-package generator
+// Package core contains shared data structures and types used across the application.
+package core
 
 // ProjectConfig stores the data collected from the user via the TUI.
 type ProjectConfig struct {
