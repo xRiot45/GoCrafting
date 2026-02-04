@@ -89,7 +89,7 @@ func forgeFile(fileSystem fs.FS, sourcePath, targetPath string, config core.Proj
 // createMetaFile creates the project metadata file using struct from core.
 func createMetaFile(config core.ProjectConfig) error {
 	meta := core.ProjectMeta{
-		CLIVersion:  "v1.0.0",
+		CLIVersion:  core.Version,
 		Name:        config.ProjectName,
 		Module:      config.ModuleName,
 		Scale:       config.ProjectScale,
