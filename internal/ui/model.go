@@ -25,8 +25,11 @@ const (
 	// StateSelectTemplate is the stage where user selects the project template.
 	StateSelectTemplate
 
-	// StateSelectPersistence is the stage where user selects the database type.
-	StateSelectPersistence
+	// StateSelectFramework is the stage where user selects the web framework.
+	StateSelectFramework
+
+	// StateSelectDatabaseDriver is the stage where user selects the database type.
+	StateSelectDatabaseDriver
 
 	// StateInstalling is the stage where dependencies are being installed.
 	StateInstalling
@@ -38,11 +41,12 @@ const (
 // MainModel is the main struct that stores all TUI application data.
 type MainModel struct {
 	// Data Fields
-	ProjectName      string
-	ModuleName       string
-	ProjectScale     string
-	SelectedTemplate string
-	Persistence      string
+	ProjectName       string
+	ModuleName        string
+	ProjectScale      string
+	SelectedTemplate  string
+	SelectedFramework string
+	DatabaseDriver    string
 
 	// State & UI Fields
 	SelectedOption     int

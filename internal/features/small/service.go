@@ -8,37 +8,65 @@ import (
 	"github.com/xRiot45/gocrafting/internal/runner"
 )
 
-// Generate adalah Entry Point khusus Small Project
+// Generate generates a small-scale project based on the provided configuration.
+// It will copy the template files to the project directory and install the required dependencies.
+// If the SelectedDatabaseDriver field is empty, it will be set to "none".
+//
+// After generating the project files, it will call installDependencies to install the required dependencies.
+//
+// Returns an error if there is an issue during the generation process.
 func Generate(config core.ProjectConfig) error {
-	// 1. Set Default
-	if config.Persistence == "" {
-		config.Persistence = "none"
+	if config.SelectedDatabaseDriver == "" {
+		config.SelectedDatabaseDriver = "none"
 	}
 
-	// 2. Panggil Base Generator (Folder, JSON, Template)
 	templatePath := filepath.Join("small", config.SelectedTemplate)
 	if err := common.BaseGenerate(config, templatePath); err != nil {
 		return err
 	}
 
-	// 3. Install Dependencies (Khusus Small)
 	return installDependencies(config)
 }
 
+// installDependencies installs the required dependencies for the generated project based on the provided configuration.
+//
+// It will get the required packages for the SelectedFramework and SelectedDatabaseDriver fields.
+// If the SelectedDatabaseDriver field is empty or "none", it will not include the database driver packages.
+//
+// After getting the required packages, it will call GoGet to install them.
+// Finally, it will call GoModTidy and GoFmt to clean up the project directory.
+//
+// Returns an error if there is an issue during the installation process.
 func installDependencies(config core.ProjectConfig) error {
 	var packages []string
 
-	// Logic Library: SQLite ModernC
-	if config.Persistence == "SQLite" {
-		packages = append(packages, "modernc.org/sqlite")
+	// ---------------------------------------------------------
+	// 1. LOGIC BERDASARKAN FRAMEWORK / TEMPLATE
+	// ---------------------------------------------------------
+
+	if config.SelectedFramework != "" {
+		packages = append(packages, core.GetPackages(config.SelectedFramework)...)
+	} else {
+		switch config.SelectedTemplate {
+		case "cli-tool":
+			packages = append(packages, core.GetPackages("Cobra")...)
+
+		case "bot-starter":
+			packages = append(packages, core.GetPackages("TelegramBot")...)
+
+		case "simple-api":
+			// No additional packages for simple-api without framework
+		}
 	}
 
-	// Jika ada template FastHTTP (Fiber), tambah package disini
-	if config.SelectedTemplate == "fast-http" {
-		packages = append(packages, "github.com/gofiber/fiber/v2")
+	// ---------------------------------------------------------
+	// 2. LOGIC BERDASARKAN PERSISTENCE (Database)
+	// ---------------------------------------------------------
+
+	if config.SelectedDatabaseDriver != "" && config.SelectedDatabaseDriver != "None" {
+		packages = append(packages, core.GetPackages(config.SelectedDatabaseDriver)...)
 	}
 
-	// Eksekusi Runner
 	if len(packages) > 0 {
 		if err := runner.GoGet(config.ProjectName, packages...); err != nil {
 			return err

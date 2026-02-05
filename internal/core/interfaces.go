@@ -7,8 +7,11 @@ type FeatureProvider interface {
 	// Mengembalikan daftar template yang tersedia untuk scale ini
 	GetTemplates() []string
 
-	// Mengembalikan daftar opsi database/persistence untuk scale ini
-	GetPersistenceOptions() []string
+	// Mengembalikan daftar framework yang tersedia untuk template tertentu
+	GetFrameworks(template string) []string
+
+	// Mengembalikan daftar opsi database untuk template tertentu
+	GetDatabaseDrivers(template string) []string
 
 	// Menjalankan logika generate project
 	Generate(config ProjectConfig) error

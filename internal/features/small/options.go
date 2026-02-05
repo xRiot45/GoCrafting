@@ -7,14 +7,42 @@ func GetTemplates() []string {
 		"simple-api",
 		"fast-http",
 		"cli-tool",
-		"bot-starter",
+		"telegram-bot-starter",
 	}
 }
 
-// GetPersistence returns available database options
-func GetPersistence() []string {
+// GetFrameworks returns available frameworks based on the selected template
+func GetFrameworks(template string) []string {
+	switch template {
+	case "fast-http":
+		return []string{
+			"Fiber",
+			"Gin",
+		}
+
+	case "simple-api":
+		return []string{}
+	case "cli-tool":
+		return []string{}
+	case "bot-starter":
+		return []string{}
+	default:
+		return []string{}
+	}
+}
+
+// GetDatabaseDrivers returns available database options
+func GetDatabaseDrivers(template string) []string {
+	if template == "cli-tool" || template == "telegram-bot-starter" {
+		return []string{
+			"None",
+		}
+	}
+
 	return []string{
 		"None",
 		"SQLite",
+		"MySQL",
+		"PostgreSQL",
 	}
 }

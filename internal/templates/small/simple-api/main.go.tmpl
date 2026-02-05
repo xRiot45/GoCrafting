@@ -1,7 +1,82 @@
 package main
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+)
 
 func main() {
-	fmt.Println("Welcome to {{.ProjectName}}!")
+	// ---------------------------------------------------------
+	// 1. INITIALIZE DATABASE (Conditional)
+	// ---------------------------------------------------------
+	{{ if ne .SelectedDatabaseDriver "None" }}
+	db, err := NewStorage()
+	if err != nil {
+		log.Fatalf("❌ Failed to initialize database: %v", err)
+	}
+	defer db.Close()
+	fmt.Println("✔ Database connection established")
+	{{ end }}
+
+	// ---------------------------------------------------------
+	// 2. SETUP ROUTER (Standard Library ServeMux)
+	// ---------------------------------------------------------
+	mux := http.NewServeMux()
+
+	// Handler: Root /
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		response := map[string]string{
+			"message": "Welcome to {{ .ProjectName }} API",
+			"module":  "{{ .ModuleName }}",
+			"tech":    "Standard Library (net/http)",
+		}
+		
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	})
+
+	// Handler: Health Check /health
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		status := "ok"
+		
+		{{ if ne .SelectedDatabaseDriver "None" }}
+		// Cek koneksi DB jika fitur database aktif
+		if err := db.Ping(); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{
+				"status": "error", 
+				"db": err.Error(),
+			})
+			return
+		}
+		{{ end }}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"status": status,
+			{{ if ne .SelectedDatabaseDriver "None" }}"db": "connected",{{ end }}
+		})
+	})
+
+	// ---------------------------------------------------------
+	// 3. START SERVER
+	// ---------------------------------------------------------
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: mux,
+	}
+
+	fmt.Printf("🚀 Server running on http://localhost:%s\n", port)
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatalf("❌ Server failed to start: %v", err)
+	}
 }

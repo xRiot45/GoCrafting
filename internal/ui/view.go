@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/xRiot45/gocrafting/internal/features/small"
+	"github.com/xRiot45/gocrafting/internal/features"
 )
 
 // View renders the UI view to a string.
@@ -24,7 +24,6 @@ func (uiModel MainModel) View() string {
 	successSymbol := lipgloss.NewStyle().Foreground(lipgloss.Color("#00FF00")).Render("✔")
 
 	// --- HEADER SECTION ---
-	// (Bagian Header sama seperti sebelumnya, sesuaikan nama State jika perlu)
 	if uiModel.ProjectName != "" && uiModel.CurrentState > StateInputProjectName {
 		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Project Name"), uiModel.ProjectName)
 	}
@@ -34,12 +33,14 @@ func (uiModel MainModel) View() string {
 	if uiModel.CurrentState > StateSelectProjectScale {
 		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Project Scale"), uiModel.ProjectScale)
 	}
-	// Perhatikan penggunaan StateSelectTemplate (bukan SmallTemplate)
 	if uiModel.SelectedTemplate != "" && uiModel.CurrentState > StateSelectTemplate {
 		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Template    "), uiModel.SelectedTemplate)
 	}
-	if uiModel.Persistence != "" && uiModel.CurrentState > StateSelectPersistence {
-		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Persistence "), uiModel.Persistence)
+	if uiModel.SelectedFramework != "" && uiModel.CurrentState > StateSelectFramework {
+		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Framework   "), uiModel.SelectedFramework)
+	}
+	if uiModel.DatabaseDriver != "" && uiModel.CurrentState > StateSelectDatabaseDriver {
+		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Database Driver "), uiModel.DatabaseDriver)
 	}
 
 	if uiModel.CurrentState > StateInputProjectName {
@@ -71,7 +72,6 @@ func (uiModel MainModel) View() string {
 			{"Enterprise", "Clean architecture, K8s ready", true},
 		}
 		for index, opt := range options {
-			// (Logic render opsi sama seperti sebelumnya...)
 			if opt.disabled {
 				viewString += fmt.Sprintf("    %s - %s %s\n", opt.label, opt.desc, "(Coming Soon)")
 			} else {
@@ -83,16 +83,12 @@ func (uiModel MainModel) View() string {
 			}
 		}
 
-	// --- LOGIC DINAMIS BARU ---
 	case StateSelectTemplate:
 		viewString += TitleStyle.Render(fmt.Sprintf("Choose %s Template:", uiModel.ProjectScale)) + "\n\n"
 
 		var options []string
-		// Ambil opsi dari Feature package
-		if uiModel.ProjectScale == "Small" {
-			options = small.GetTemplates()
-		} else {
-			options = []string{"Default"}
+		if provider, err := features.GetProvider(uiModel.ProjectScale); err == nil {
+			options = provider.GetTemplates()
 		}
 
 		for index, label := range options {
@@ -105,14 +101,30 @@ func (uiModel MainModel) View() string {
 			viewString += fmt.Sprintf("  %s %s\n", cursor, txt)
 		}
 
-	case StateSelectPersistence:
-		viewString += TitleStyle.Render("Select Persistence:") + "\n\n"
+	case StateSelectFramework:
+		viewString += TitleStyle.Render("Select Web Framework:") + "\n\n"
 
 		var options []string
-		if uiModel.ProjectScale == "Small" {
-			options = small.GetPersistence()
-		} else {
-			options = []string{"None"}
+		if provider, err := features.GetProvider(uiModel.ProjectScale); err == nil {
+			options = provider.GetFrameworks(uiModel.SelectedTemplate)
+		}
+
+		for index, label := range options {
+			cursor := " "
+			txt := label
+			if uiModel.SelectedOption == index {
+				cursor = lipgloss.NewStyle().Foreground(ColorAccent).Render("›")
+				txt = lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render(label)
+			}
+			viewString += fmt.Sprintf("  %s %s\n", cursor, txt)
+		}
+
+	case StateSelectDatabaseDriver:
+		viewString += TitleStyle.Render("Select Persistence (Database):") + "\n\n"
+
+		var options []string
+		if provider, err := features.GetProvider(uiModel.ProjectScale); err == nil {
+			options = provider.GetDatabaseDrivers(uiModel.SelectedTemplate)
 		}
 
 		for index, label := range options {

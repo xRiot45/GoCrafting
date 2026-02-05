@@ -15,18 +15,20 @@ func NewProvider() Provider {
 
 // GetTemplates (Implementasi Interface)
 func (p Provider) GetTemplates() []string {
-	// Memanggil fungsi dari options.go yang sudah ada
 	return GetTemplates()
 }
 
-// GetPersistenceOptions (Implementasi Interface)
-func (p Provider) GetPersistenceOptions() []string {
-	// Memanggil fungsi dari options.go yang sudah ada
-	return GetPersistence()
+// GetFrameworks (Implementasi Interface)
+func (p Provider) GetFrameworks(template string) []string {
+	return GetFrameworks(template)
+}
+
+// GetDatabaseDrivers (Implementasi Interface)
+func (p Provider) GetDatabaseDrivers(template string) []string {
+	return GetDatabaseDrivers(template)
 }
 
 // Generate (Implementasi Interface)
 func (p Provider) Generate(config core.ProjectConfig) error {
-	// Memanggil fungsi dari service.go yang sudah ada
 	return Generate(config)
 }

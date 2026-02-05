@@ -14,18 +14,22 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := message.(type) {
 
-	// --- HANDLER ASYNC (Tetap Sama) ---
+	// =========================================================
+	// 1. HANDLER ASYNC PROCESS
+	// =========================================================
+
 	case FilesCreatedMsg:
 		uiModel.InstallMsg = "Downloading dependencies..."
 		cmds = append(cmds, uiModel.Progress.SetPercent(0.3))
 
-		// Recreate config for context
+		// Recreate config for context (Dependency Installation)
 		config := core.ProjectConfig{
-			ProjectName:      uiModel.ProjectName,
-			ModuleName:       uiModel.ModuleName,
-			ProjectScale:     uiModel.ProjectScale,
-			SelectedTemplate: uiModel.SelectedTemplate,
-			Persistence:      uiModel.Persistence,
+			ProjectName:            uiModel.ProjectName,
+			ModuleName:             uiModel.ModuleName,
+			ProjectScale:           uiModel.ProjectScale,
+			SelectedTemplate:       uiModel.SelectedTemplate,
+			SelectedFramework:      uiModel.SelectedFramework,
+			SelectedDatabaseDriver: uiModel.DatabaseDriver,
 		}
 		cmds = append(cmds, installDepsCmd(uiModel.ProjectName, config))
 
@@ -43,7 +47,10 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	case InstallErrorMsg:
 		uiModel.Err = msg
 		return uiModel, tea.Quit
-	// ----------------------------------
+
+	// =========================================================
+	// 2. HANDLER KOMPONEN UI
+	// =========================================================
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd
@@ -54,6 +61,10 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		progressModel, cmd := uiModel.Progress.Update(msg)
 		uiModel.Progress = progressModel.(progress.Model)
 		cmds = append(cmds, cmd)
+
+	// =========================================================
+	// 3. HANDLER INPUT KEYBOARD
+	// =========================================================
 
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -68,7 +79,6 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 			switch uiModel.CurrentState {
 			case StateInputProjectName:
-				// ... (Logic Input Name Tetap Sama)
 				val := uiModel.TextInputComponent.Value()
 				if val == "" {
 					return uiModel, nil
@@ -80,7 +90,6 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				return uiModel, nil
 
 			case StateInputModuleName:
-				// ... (Logic Input Module Tetap Sama)
 				val := uiModel.TextInputComponent.Value()
 				if val == "" {
 					val = "github.com/username/" + uiModel.ProjectName
@@ -90,7 +99,6 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 				uiModel.CurrentState = StateSelectProjectScale
 				return uiModel, nil
 
-			// 1. SELECT SCALE (Titik Penentuan)
 			case StateSelectProjectScale:
 				scales := []string{"Small", "Medium", "Enterprise"}
 				if uiModel.SelectedOption >= len(scales) {
@@ -99,58 +107,97 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 				selectedScale := scales[uiModel.SelectedOption]
 
-				// VALIDASI: Cek apakah scale ini sudah ada implementasinya?
-				_, err := features.GetProvider(selectedScale)
-				if err != nil {
-					// Jika error (misal Medium belum ada), tampilkan error di UI atau ignore
-					// Disini kita return nil agar user tetap di menu ini
+				// Validasi Provider (Mencegah memilih fitur yang belum ada)
+				if _, err := features.GetProvider(selectedScale); err != nil {
 					uiModel.Err = err
 					return uiModel, nil
 				}
 
-				// Jika valid, simpan scale dan lanjut
 				uiModel.ProjectScale = selectedScale
-				uiModel.Err = nil // Clear error jika ada sebelumnya
+				uiModel.Err = nil
 				uiModel.SelectedOption = 0
 				uiModel.CurrentState = StateSelectTemplate
 				return uiModel, nil
 
-			// 2. SELECT TEMPLATE (Dinamic via Interface)
+			// --- LOGIC FLOW PINTAR (Smart Skipping) ---
+
+			// 1. SELECT TEMPLATE
 			case StateSelectTemplate:
 				provider, _ := features.GetProvider(uiModel.ProjectScale)
-				// UI TIDAK PEDULI INI SMALL ATAU MEDIUM
-				// UI cuma panggil: provider.GetTemplates()
 				options := provider.GetTemplates()
 
 				uiModel.SelectedTemplate = options[uiModel.SelectedOption]
 				uiModel.SelectedOption = 0
-				uiModel.CurrentState = StateSelectPersistence
-				return uiModel, nil
 
-			// 3. SELECT PERSISTENCE (Dinamic via Interface)
-			case StateSelectPersistence:
-				provider, _ := features.GetProvider(uiModel.ProjectScale)
-				dbOptions := provider.GetPersistenceOptions()
-
-				if uiModel.SelectedOption >= len(dbOptions) {
-					uiModel.SelectedOption = 0
+				// CEK: Apakah butuh Framework?
+				frameworks := provider.GetFrameworks(uiModel.SelectedTemplate)
+				if len(frameworks) > 0 {
+					uiModel.CurrentState = StateSelectFramework
+					return uiModel, nil
 				}
-				uiModel.Persistence = dbOptions[uiModel.SelectedOption]
 
-				// TRIGGER INSTALLATION
+				// JIKA TIDAK: Skip Framework -> Cek Database
+				uiModel.SelectedFramework = "None"
+				goto CHECK_DATABASE
+
+			// 2. SELECT FRAMEWORK
+			case StateSelectFramework:
+				provider, _ := features.GetProvider(uiModel.ProjectScale)
+				frameworkOptions := provider.GetFrameworks(uiModel.SelectedTemplate)
+
+				uiModel.SelectedFramework = frameworkOptions[uiModel.SelectedOption]
+				uiModel.SelectedOption = 0
+
+				// Setelah pilih framework -> Cek Database
+				goto CHECK_DATABASE
+
+			// 3. SELECT DATABASE
+			case StateSelectDatabaseDriver:
+				provider, _ := features.GetProvider(uiModel.ProjectScale)
+				// Gunakan template untuk filter opsi DB
+				dbOptions := provider.GetDatabaseDrivers(uiModel.SelectedTemplate)
+
+				uiModel.DatabaseDriver = dbOptions[uiModel.SelectedOption]
+
+				// Setelah pilih DB -> Install
+				goto TRIGGER_INSTALL
+			}
+
+			// LABEL: Logic pengecekan database (Reusable)
+		CHECK_DATABASE:
+			{
+				provider, _ := features.GetProvider(uiModel.ProjectScale)
+				// Kita cek opsi database berdasarkan template yang dipilih
+				// (Ingat update GetDatabaseDrivers agar menerima parameter template)
+				dbOptions := provider.GetDatabaseDrivers(uiModel.SelectedTemplate)
+
+				if len(dbOptions) > 0 {
+					uiModel.CurrentState = StateSelectDatabaseDriver
+					return uiModel, nil
+				}
+
+				// Jika opsi kosong (misal CLI Tool), set None dan langsung Install
+				uiModel.DatabaseDriver = "None"
+				goto TRIGGER_INSTALL
+			}
+
+			// LABEL: Logic Memulai Instalasi (Reusable)
+		TRIGGER_INSTALL:
+			{
 				uiModel.CurrentState = StateInstalling
 				uiModel.InstallMsg = "Forging project files..."
 
 				config := core.ProjectConfig{
-					ProjectName:      uiModel.ProjectName,
-					ModuleName:       uiModel.ModuleName,
-					ProjectScale:     uiModel.ProjectScale,
-					SelectedTemplate: uiModel.SelectedTemplate,
-					Persistence:      uiModel.Persistence,
+					ProjectName:            uiModel.ProjectName,
+					ModuleName:             uiModel.ModuleName,
+					ProjectScale:           uiModel.ProjectScale,
+					SelectedTemplate:       uiModel.SelectedTemplate,
+					SelectedFramework:      uiModel.SelectedFramework,
+					SelectedDatabaseDriver: uiModel.DatabaseDriver,
 				}
 
 				cmds = append(cmds, uiModel.Spinner.Tick)
-				cmds = append(cmds, generateFilesCmd(config)) // Command generic
+				cmds = append(cmds, generateFilesCmd(config))
 				return uiModel, tea.Batch(cmds...)
 			}
 
@@ -162,21 +209,26 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyDown:
 			var maxIndex int
 
-			// LOGIC MAX INDEX (Sangat Bersih Sekarang)
 			switch uiModel.CurrentState {
 			case StateSelectProjectScale:
 				maxIndex = 2
 
 			case StateSelectTemplate:
-				// Tanya Provider: "Punya berapa template?"
 				if provider, err := features.GetProvider(uiModel.ProjectScale); err == nil {
 					maxIndex = len(provider.GetTemplates()) - 1
 				}
 
-			case StateSelectPersistence:
-				// Tanya Provider: "Punya berapa opsi DB?"
+			case StateSelectFramework:
 				if provider, err := features.GetProvider(uiModel.ProjectScale); err == nil {
-					maxIndex = len(provider.GetPersistenceOptions()) - 1
+					options := provider.GetFrameworks(uiModel.SelectedTemplate)
+					maxIndex = len(options) - 1
+				}
+
+			case StateSelectDatabaseDriver:
+				if provider, err := features.GetProvider(uiModel.ProjectScale); err == nil {
+					// PENTING: Pass SelectedTemplate ke sini
+					options := provider.GetDatabaseDrivers(uiModel.SelectedTemplate)
+					maxIndex = len(options) - 1
 				}
 			}
 
@@ -186,6 +238,7 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	// Update Text Input hanya di state tertentu
 	if uiModel.CurrentState == StateInputProjectName || uiModel.CurrentState == StateInputModuleName {
 		var cmd tea.Cmd
 		uiModel.TextInputComponent, cmd = uiModel.TextInputComponent.Update(message)

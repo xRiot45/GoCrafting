@@ -88,16 +88,40 @@ func forgeFile(fileSystem fs.FS, sourcePath, targetPath string, config core.Proj
 
 // createMetaFile creates the project metadata file using struct from core.
 func createMetaFile(config core.ProjectConfig) error {
-	meta := core.ProjectMeta{
-		CLIVersion:  core.Version,
-		Name:        config.ProjectName,
-		Module:      config.ModuleName,
-		Scale:       config.ProjectScale,
-		Template:    config.SelectedTemplate,
-		Persistence: config.Persistence,
-		CreatedAt:   time.Now().Format(time.RFC3339),
+
+	// 1. LOGIC PENENTUAN FRAMEWORK NAME
+	// Jika config.SelectedFramework kosong (karena UI skip), kita ubah jadi "None"
+	frameworkName := config.SelectedFramework
+	if frameworkName == "" {
+		frameworkName = "None"
+
+		// OPSI ALTERNATIF (Lebih Deskriptif):
+		// Jika Anda ingin simple-api tertulis "Net/HTTP" alih-alih "None", gunakan switch ini:
+		/*
+			switch config.SelectedTemplate {
+			case "simple-api":
+				frameworkName = "Net/HTTP"
+			case "cli-tool":
+				frameworkName = "Cobra"
+			default:
+				frameworkName = "None"
+			}
+		*/
 	}
 
+	// 2. ISI STRUCT META
+	meta := core.ProjectMeta{
+		CLIVersion:     core.Version,
+		Name:           config.ProjectName,
+		Module:         config.ModuleName,
+		Scale:          config.ProjectScale,
+		Template:       config.SelectedTemplate,
+		Framework:      frameworkName,
+		DatabaseDriver: config.SelectedDatabaseDriver,
+		CreatedAt:      time.Now().Format(time.RFC3339),
+	}
+
+	// 3. WRITE FILE
 	fileContent, err := json.MarshalIndent(meta, "", "  ")
 	if err != nil {
 		return err

@@ -1,0 +1,81 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"os"
+
+	// Framework Import
+	{{ if eq .SelectedFramework "Fiber" }}"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	{{ else if eq .SelectedFramework "Gin" }}"github.com/gin-gonic/gin"{{ end }}
+)
+
+func main() {
+	// 1. Initialize Database (If selected)
+	{{ if ne .SelectedDatabaseDriver "None" }}
+	db, err := NewStorage()
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer db.Close()
+	fmt.Println("✔ Database connection established")
+	{{ end }}
+
+	// 2. Initialize Web Server
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+
+	{{ if eq .SelectedFramework "Fiber" }}
+	// --- FIBER SETUP ---
+	app := fiber.New()
+	app.Use(logger.New())
+
+	// Routes
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"message": "Hello from GoCrafting (Fiber)!",
+			"scale":   "{{ .ProjectScale }}",
+		})
+	})
+	
+	app.Get("/health", func(c *fiber.Ctx) error {
+		{{ if ne .SelectedDatabaseDriver "None" }}
+		if err := db.Ping(); err != nil {
+			return c.Status(500).JSON(fiber.Map{"status": "db_error", "error": err.Error()})
+		}
+		{{ end }}
+		return c.JSON(fiber.Map{"status": "ok"})
+	})
+
+	fmt.Printf("🚀 Server running on port %s\n", port)
+	log.Fatal(app.Listen(":" + port))
+
+	{{ else if eq .SelectedFramework "Gin" }}
+	// --- GIN SETUP ---
+	r := gin.Default()
+
+	// Routes
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Hello from GoCrafting (Gin)!",
+			"scale":   "{{ .ProjectScale }}",
+		})
+	})
+
+	r.GET("/health", func(c *gin.Context) {
+		{{ if ne .SelectedDatabaseDriver "None" }}
+		if err := db.Ping(); err != nil {
+			c.JSON(500, gin.H{"status": "db_error", "error": err.Error()})
+			return
+		}
+		{{ end }}
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
+	fmt.Printf("🚀 Server running on port %s\n", port)
+	r.Run(":" + port)
+	{{ end }}
+}
