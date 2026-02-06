@@ -1,0 +1,25 @@
+APP_NAME={{ .ProjectName }}
+APP_ENV=development
+APP_URL=http://localhost:8080
+PORT=8080
+APP_DEBUG=true
+
+# Logging text agar enak dibaca di terminal
+LOG_LEVEL=debug
+LOG_FORMAT=text
+
+# Database Localhost
+DB_DRIVER={{ .SelectedDatabaseDriver }}
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=root
+DB_NAME={{ .ProjectName }}_dev
+DB_SSL_MODE=disable
+
+# Cache & Auth
+REDIS_HOST=127.0.0.1
+JWT_SECRET=secret_dev_key_123
+
+# Mocking Email (Mailtrap)
+MAIL_DRIVER=log

@@ -15,15 +15,19 @@ import (
 func GenerateAddons(config core.ProjectConfig) error {
 	fmt.Println("📦 Generating selected add-ons...")
 
-	// 1. .env (Environment Variables)
 	if config.HasAddon("Environment File (.env)") {
-		// Create .env file
-		if err := renderAndWrite(config, "shared/env.tmpl", ".env"); err != nil {
-			return err
+		envFiles := map[string]string{
+			"shared/env/env_development.tmpl": ".env.development", // Dev config
+			"shared/env/env_example.tmpl":     ".env.example",     // Master Documentation
+			"shared/env/env_production.tmpl":  ".env.production",  // Prod config
+			"shared/env/env_staging.tmpl":     ".env.staging",     // Staging config
+			"shared/env/env_test.tmpl":        ".env.test",        // CI/CD config
 		}
-		// Create .env.example
-		if err := renderAndWrite(config, "shared/env.tmpl", ".env.example"); err != nil {
-			return err
+
+		for tpl, output := range envFiles {
+			if err := renderAndWrite(config, tpl, output); err != nil {
+				return fmt.Errorf("failed to create %s: %w", output, err)
+			}
 		}
 	}
 
@@ -31,25 +35,38 @@ func GenerateAddons(config core.ProjectConfig) error {
 }
 
 // renderAndWrite renders the template based on the provided configuration and writes the result to the target file.
-func renderAndWrite(config core.ProjectConfig, templateName string, targetFileName string) error {
-	tmplContent, err := templates.FS.ReadFile(templateName)
+func renderAndWrite(config core.ProjectConfig, templatePath string, outputPath string) error {
+	// 1. Read Template from Embed FS
+	tplContent, err := templates.FS.ReadFile(templatePath)
 	if err != nil {
-		return fmt.Errorf("failed to read template %s: %w", templateName, err)
+		return fmt.Errorf("template not found: %s", templatePath)
 	}
 
-	tmpl, err := template.New(targetFileName).Parse(string(tmplContent))
+	// 2. Parse Template
+	tmpl, err := template.New(outputPath).Parse(string(tplContent))
 	if err != nil {
-		return fmt.Errorf("failed to parse template %s: %w", templateName, err)
+		return fmt.Errorf("failed to parse template %s: %w", templatePath, err)
 	}
 
+	// 3. Execute Template (Inject Data)
 	var buffer bytes.Buffer
 	if err := tmpl.Execute(&buffer, config); err != nil {
-		return fmt.Errorf("failed to execute template %s: %w", templateName, err)
+		return fmt.Errorf("failed to execute template %s: %w", templatePath, err)
 	}
 
-	targetPath := filepath.Join(config.ProjectName, targetFileName)
-	if err := os.WriteFile(targetPath, buffer.Bytes(), 0600); err != nil {
-		return fmt.Errorf("failed to write file %s: %w", targetPath, err)
+	// 4. Prepare Output Path
+	// Handle jika outputPath mengandung folder (misal: .github/workflows/ci.yml)
+	fullPath := filepath.Join(config.ProjectName, outputPath)
+	dir := filepath.Dir(fullPath)
+	if dir != "." {
+		if err := os.MkdirAll(dir, 0750); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
+	}
+
+	// 5. Write File
+	if err := os.WriteFile(fullPath, buffer.Bytes(), 0600); err != nil {
+		return fmt.Errorf("failed to write file %s: %w", fullPath, err)
 	}
 
 	return nil

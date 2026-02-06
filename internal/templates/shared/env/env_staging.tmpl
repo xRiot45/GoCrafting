@@ -1,0 +1,20 @@
+APP_NAME={{ .ProjectName }}
+APP_ENV=staging
+APP_URL=https://staging.my-app.com
+APP_DEBUG=true # Kadang true untuk memudahkan debugging client
+
+LOG_LEVEL=info
+LOG_FORMAT=json
+
+# Database Staging (Cloud)
+DB_DRIVER={{ .SelectedDatabaseDriver }}
+DB_HOST=staging-db.provider.com
+DB_PORT=3306
+DB_USER=staging_user
+DB_PASSWORD=<SECURE_PASSWORD>
+DB_NAME={{ .ProjectName }}_staging
+DB_SSL_MODE=require
+
+# External Services (Sandbox Mode)
+PAYMENT_GATEWAY_URL=https://api.sandbox.midtrans.com
+MAIL_DRIVER=smtp

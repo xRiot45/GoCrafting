@@ -1,0 +1,35 @@
+APP_NAME={{ .ProjectName }}
+APP_ENV=production
+APP_URL=https://api.my-app.com
+# MATIKAN DEBUG DI PRODUCTION!
+APP_DEBUG=false
+
+# Log JSON untuk diparsing ELK Stack / Datadog
+LOG_LEVEL=info
+LOG_FORMAT=json
+
+# Database Production (Optimized Config)
+DB_DRIVER={{ .SelectedDatabaseDriver }}
+DB_HOST=prod-db-cluster.provider.com
+DB_PORT=3306
+DB_USER=app_prod_user
+DB_PASSWORD=<VERY_SECURE_COMPLEX_PASSWORD>
+DB_NAME={{ .ProjectName }}
+DB_SSL_MODE=verify-full
+
+# Connection Pool (Tuning sesuai kapasitas CPU DB)
+DB_MAX_OPEN_CONNS=50
+DB_MAX_IDLE_CONNS=25
+DB_CONN_MAX_LIFETIME=30m
+
+# Redis Production
+REDIS_HOST=redis-cluster.provider.com
+REDIS_PASSWORD=<SECURE_REDIS_PASSWORD>
+
+# Security Strict
+CORS_ALLOWED_ORIGINS=https://my-app.com,https://admin.my-app.com
+JWT_SECRET=<GENERATED_BASE64_KEY_MIN_32_CHARS>
+
+# Monitoring Aktif
+SENTRY_DSN=https://key@sentry.io/123
+PROMETHEUS_ENABLED=true

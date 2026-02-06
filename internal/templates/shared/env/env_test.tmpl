@@ -1,0 +1,22 @@
+APP_NAME={{ .ProjectName }}
+APP_ENV=test
+APP_DEBUG=true
+
+# Log error saja agar output test tidak berisik
+LOG_LEVEL=error
+LOG_FORMAT=text
+
+# Database Khusus Test (Seringkali dilempar/direset tiap test)
+DB_DRIVER={{ .SelectedDatabaseDriver }}
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=root
+DB_NAME={{ .ProjectName }}_test
+DB_SSL_MODE=disable
+
+# Redis DB berbeda agar tidak menghapus cache dev
+REDIS_DB=1
+
+# Disable Rate Limiter saat test
+RATE_LIMIT_REQUESTS=10000
