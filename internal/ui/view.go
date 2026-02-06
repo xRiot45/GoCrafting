@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/xRiot45/gocrafting/internal/features"
@@ -39,8 +40,15 @@ func (uiModel MainModel) View() string {
 	if uiModel.SelectedFramework != "" && uiModel.CurrentState > StateSelectFramework {
 		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Framework   "), uiModel.SelectedFramework)
 	}
-	if uiModel.DatabaseDriver != "" && uiModel.CurrentState > StateSelectDatabaseDriver {
-		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Database Driver "), uiModel.DatabaseDriver)
+	if uiModel.SelectedDatabaseDriver != "" && uiModel.CurrentState > StateSelectDatabaseDriver {
+		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Database Driver "), uiModel.SelectedDatabaseDriver)
+	}
+	if len(uiModel.SelectedAddonsIndices) > 0 && uiModel.CurrentState > StateSelectAddons {
+		var selectedAddons []string
+		for idx := range uiModel.SelectedAddonsIndices {
+			selectedAddons = append(selectedAddons, AddonList[idx])
+		}
+		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Add-ons     "), strings.Join(selectedAddons, ", "))
 	}
 
 	if uiModel.CurrentState > StateInputProjectName {
@@ -136,6 +144,35 @@ func (uiModel MainModel) View() string {
 			}
 			viewString += fmt.Sprintf("  %s %s\n", cursor, txt)
 		}
+
+	case StateSelectAddons:
+		var sb strings.Builder
+
+		sb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#FF4DC4")).Bold(true).Render("Select Additional Features") + "\n")
+		sb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#5C5C5C")).Italic(true).Render("Press <SPACE> to toggle, <ENTER> to confirm") + "\n\n")
+
+		for index, label := range AddonList {
+			cursor := " "
+			checkbox := "[ ]"
+			itemStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#AAAAAA"))
+
+			if uiModel.SelectedOption == index {
+				cursor = "› "
+				itemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FAFAFA")).Bold(true)
+			}
+
+			if uiModel.SelectedAddonsIndices[index] {
+				checkbox = "[✔]"
+				if uiModel.SelectedOption != index {
+					itemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00FF00"))
+				}
+			}
+
+			sb.WriteString(fmt.Sprintf("%s%s %s\n", cursor, checkbox, itemStyle.Render(label)))
+
+		}
+
+		viewString += sb.String()
 
 	case StateInstalling:
 		viewString += "\n" + TitleStyle.Render("🚀 Initiating Launch Sequence...") + "\n\n"

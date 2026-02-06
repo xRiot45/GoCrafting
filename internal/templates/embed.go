@@ -5,7 +5,7 @@ import (
 	"embed"
 )
 
-// ProjectTemplates holds the embedded filesystem containing all project templates (small, medium, etc).
+// FS contains all the embedded templates for different project scales and features.
 //
 //go:embed all:*
-var ProjectTemplates embed.FS
+var FS embed.FS

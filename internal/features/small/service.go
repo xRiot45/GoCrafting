@@ -1,7 +1,7 @@
 package small
 
 import (
-	"path/filepath"
+	"fmt"
 
 	"github.com/xRiot45/gocrafting/internal/core"
 	"github.com/xRiot45/gocrafting/internal/features/common"
@@ -16,16 +16,25 @@ import (
 //
 // Returns an error if there is an issue during the generation process.
 func Generate(config core.ProjectConfig) error {
-	if config.SelectedDatabaseDriver == "" {
-		config.SelectedDatabaseDriver = "none"
-	}
-
-	templatePath := filepath.Join("small", config.SelectedTemplate)
+	// 1. Base Structure (Folder, JSON, Template Files)
+	// (Pastikan path templateSourcePath benar sesuai folder Anda)
+	templatePath := "small/" + config.SelectedTemplate
 	if err := common.BaseGenerate(config, templatePath); err != nil {
 		return err
 	}
 
-	return installDependencies(config)
+	// 2. Install Dependencies
+	if err := installDependencies(config); err != nil {
+		return fmt.Errorf("failed to install dependencies: %w", err)
+	}
+
+	// 3. [BARU] GENERATE ADDONS (.env, dll)
+	// Panggil fungsi global yang baru kita buat
+	if err := common.GenerateAddons(config); err != nil {
+		return fmt.Errorf("failed to generate addons: %w", err)
+	}
+
+	return nil
 }
 
 // installDependencies installs the required dependencies for the generated project based on the provided configuration.

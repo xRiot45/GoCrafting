@@ -40,7 +40,7 @@ func BaseGenerate(config core.ProjectConfig, templateSourcePath string) error {
 
 // copyResources scans internal/templates and copies them to the destination.
 func copyResources(sourceDir string, config core.ProjectConfig) error {
-	fileSystem := templates.ProjectTemplates
+	fileSystem := templates.FS
 
 	return fs.WalkDir(fileSystem, sourceDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -118,6 +118,7 @@ func createMetaFile(config core.ProjectConfig) error {
 		Template:       config.SelectedTemplate,
 		Framework:      frameworkName,
 		DatabaseDriver: config.SelectedDatabaseDriver,
+		Addons:         config.SelectedAddons,
 		CreatedAt:      time.Now().Format(time.RFC3339),
 	}
 

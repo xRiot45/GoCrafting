@@ -31,6 +31,9 @@ const (
 	// StateSelectDatabaseDriver is the stage where user selects the database type.
 	StateSelectDatabaseDriver
 
+	// StateSelectAddons is the stage where user selects additional features.
+	StateSelectAddons
+
 	// StateInstalling is the stage where dependencies are being installed.
 	StateInstalling
 
@@ -38,15 +41,21 @@ const (
 	StateGenerationDone
 )
 
+// AddonList contains the list of available add-ons for project generation.
+var AddonList = []string{
+	"Environment File (.env)",
+}
+
 // MainModel is the main struct that stores all TUI application data.
 type MainModel struct {
 	// Data Fields
-	ProjectName       string
-	ModuleName        string
-	ProjectScale      string
-	SelectedTemplate  string
-	SelectedFramework string
-	DatabaseDriver    string
+	ProjectName            string
+	ModuleName             string
+	ProjectScale           string
+	SelectedTemplate       string
+	SelectedFramework      string
+	SelectedDatabaseDriver string
+	SelectedAddonsIndices  map[int]bool
 
 	// State & UI Fields
 	SelectedOption     int
@@ -78,12 +87,13 @@ func New() MainModel {
 	spin.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	return MainModel{
-		TextInputComponent: ti,
-		Progress:           prog,
-		Spinner:            spin,
-		CurrentState:       StateInputProjectName,
-		SelectedOption:     0,
-		IsQuitting:         false,
+		TextInputComponent:    ti,
+		Progress:              prog,
+		Spinner:               spin,
+		CurrentState:          StateInputProjectName,
+		SelectedAddonsIndices: make(map[int]bool),
+		SelectedOption:        0,
+		IsQuitting:            false,
 	}
 }
 
