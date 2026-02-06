@@ -1,5 +1,5 @@
-// Package runner provides functions for executing commands in a project directory.
-package runner
+// Package shell provides functions for executing commands in a project directory.
+package shell
 
 import (
 	"fmt"

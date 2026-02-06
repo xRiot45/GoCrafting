@@ -1,9 +1,7 @@
 // Package small provides the implementation for small-scale project generation.
 package small
 
-import (
-	"github.com/xRiot45/gocrafting/internal/core"
-)
+import "github.com/xRiot45/gocrafting/internal/core"
 
 // Provider adalah struct yang mengimplementasikan core.FeatureProvider
 type Provider struct{}

@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/xRiot45/gocrafting/internal/core"
-	"github.com/xRiot45/gocrafting/internal/features/common"
-	"github.com/xRiot45/gocrafting/internal/runner"
+	common "github.com/xRiot45/gocrafting/internal/generators/shared"
+	"github.com/xRiot45/gocrafting/internal/shell"
 )
 
 // Generate generates a small-scale project based on the provided configuration.
@@ -77,14 +77,14 @@ func installDependencies(config core.ProjectConfig) error {
 	}
 
 	if len(packages) > 0 {
-		if err := runner.GoGet(config.ProjectName, packages...); err != nil {
+		if err := shell.GoGet(config.ProjectName, packages...); err != nil {
 			return err
 		}
 	}
 
-	if err := runner.RunGoModTidy(config.ProjectName); err != nil {
+	if err := shell.RunGoModTidy(config.ProjectName); err != nil {
 		return err
 	}
 
-	return runner.RunGoFmt(config.ProjectName)
+	return shell.RunGoFmt(config.ProjectName)
 }

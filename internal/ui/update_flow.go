@@ -2,7 +2,7 @@ package ui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/xRiot45/gocrafting/internal/features"
+	"github.com/xRiot45/gocrafting/internal/generators"
 )
 
 // handleEnter mengurus logika perpindahan State saat tombol Enter ditekan
@@ -43,7 +43,7 @@ func (m MainModel) handleEnter() (tea.Model, tea.Cmd) {
 		scales := []string{"Small", "Medium", "Enterprise"}
 		selected := scales[m.SelectedOption]
 
-		if _, err := features.GetProvider(selected); err != nil {
+		if _, err := generators.GetProvider(selected); err != nil {
 			m.Err = err
 			return m, nil
 		}
@@ -56,7 +56,7 @@ func (m MainModel) handleEnter() (tea.Model, tea.Cmd) {
 
 	// STEP 4: Select Template
 	case StateSelectTemplate:
-		provider, _ := features.GetProvider(m.ProjectScale)
+		provider, _ := generators.GetProvider(m.ProjectScale)
 		m.SelectedTemplate = provider.GetTemplates()[m.SelectedOption]
 		m.SelectedOption = 0
 
@@ -72,7 +72,7 @@ func (m MainModel) handleEnter() (tea.Model, tea.Cmd) {
 
 	// STEP 5: Select Framework
 	case StateSelectFramework:
-		provider, _ := features.GetProvider(m.ProjectScale)
+		provider, _ := generators.GetProvider(m.ProjectScale)
 		frameworks := provider.GetFrameworks(m.SelectedTemplate)
 		m.SelectedFramework = frameworks[m.SelectedOption]
 		m.SelectedOption = 0
@@ -81,7 +81,7 @@ func (m MainModel) handleEnter() (tea.Model, tea.Cmd) {
 
 	// STEP 6: Select Database
 	case StateSelectDatabaseDriver:
-		provider, _ := features.GetProvider(m.ProjectScale)
+		provider, _ := generators.GetProvider(m.ProjectScale)
 		dbs := provider.GetDatabaseDrivers(m.SelectedTemplate)
 		m.SelectedDatabaseDriver = dbs[m.SelectedOption]
 
@@ -101,7 +101,7 @@ func (m MainModel) handleEnter() (tea.Model, tea.Cmd) {
 
 // checkDatabaseStep menentukan apakah perlu masuk menu database atau skip ke addons
 func (m MainModel) checkDatabaseStep() (tea.Model, tea.Cmd) {
-	provider, _ := features.GetProvider(m.ProjectScale)
+	provider, _ := generators.GetProvider(m.ProjectScale)
 	dbOptions := provider.GetDatabaseDrivers(m.SelectedTemplate)
 
 	// Jika ada opsi database

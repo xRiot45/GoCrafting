@@ -2,7 +2,7 @@ package ui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/xRiot45/gocrafting/internal/features"
+	"github.com/xRiot45/gocrafting/internal/generators"
 )
 
 // handleNavigation mengurus logika Up, Down, dan Space
@@ -31,7 +31,7 @@ func (m MainModel) handleNavigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// --- NAVIGASI BAWAH ---
 	case tea.KeyDown:
 		var maxIndex int
-		provider, _ := features.GetProvider(m.ProjectScale)
+		provider, _ := generators.GetProvider(m.ProjectScale)
 
 		switch m.CurrentState {
 		case StateSelectProjectScale:

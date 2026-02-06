@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/xRiot45/gocrafting/internal/features"
+	"github.com/xRiot45/gocrafting/internal/generators"
 )
 
 // View renders the UI view to a string.
@@ -95,7 +95,7 @@ func (uiModel MainModel) View() string {
 		viewString += TitleStyle.Render(fmt.Sprintf("Choose %s Template:", uiModel.ProjectScale)) + "\n\n"
 
 		var options []string
-		if provider, err := features.GetProvider(uiModel.ProjectScale); err == nil {
+		if provider, err := generators.GetProvider(uiModel.ProjectScale); err == nil {
 			options = provider.GetTemplates()
 		}
 
@@ -113,7 +113,7 @@ func (uiModel MainModel) View() string {
 		viewString += TitleStyle.Render("Select Web Framework:") + "\n\n"
 
 		var options []string
-		if provider, err := features.GetProvider(uiModel.ProjectScale); err == nil {
+		if provider, err := generators.GetProvider(uiModel.ProjectScale); err == nil {
 			options = provider.GetFrameworks(uiModel.SelectedTemplate)
 		}
 
@@ -131,7 +131,7 @@ func (uiModel MainModel) View() string {
 		viewString += TitleStyle.Render("Select Persistence (Database):") + "\n\n"
 
 		var options []string
-		if provider, err := features.GetProvider(uiModel.ProjectScale); err == nil {
+		if provider, err := generators.GetProvider(uiModel.ProjectScale); err == nil {
 			options = provider.GetDatabaseDrivers(uiModel.SelectedTemplate)
 		}
 

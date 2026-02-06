@@ -1,11 +1,11 @@
-// Package features provides a registry to manage different project scale providers.
-package features
+// Package generators provides a registry for different project scale feature providers.
+package generators
 
 import (
 	"fmt"
 
 	"github.com/xRiot45/gocrafting/internal/core"
-	"github.com/xRiot45/gocrafting/internal/features/small"
+	"github.com/xRiot45/gocrafting/internal/generators/small"
 )
 
 // GetProvider returns a FeatureProvider based on the given project scale.
@@ -15,7 +15,6 @@ func GetProvider(scale string) (core.FeatureProvider, error) {
 		return small.NewProvider(), nil
 
 	case "Medium":
-		// return medium.NewProvider(), nil
 		return nil, fmt.Errorf("feature medium is coming soon")
 
 	case "Enterprise":

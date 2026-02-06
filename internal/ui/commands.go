@@ -5,8 +5,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/xRiot45/gocrafting/internal/core"
-	"github.com/xRiot45/gocrafting/internal/features"
-	"github.com/xRiot45/gocrafting/internal/runner"
+	"github.com/xRiot45/gocrafting/internal/generators"
+	"github.com/xRiot45/gocrafting/internal/shell"
 )
 
 // --- MESSAGE TYPES ---
@@ -32,7 +32,7 @@ func generateFilesCmd(config core.ProjectConfig) tea.Cmd {
 		time.Sleep(time.Millisecond * 800)
 
 		// LOGIC BARU: Minta Provider berdasarkan Scale dari Config
-		provider, err := features.GetProvider(config.ProjectScale)
+		provider, err := generators.GetProvider(config.ProjectScale)
 		if err != nil {
 			return InstallErrorMsg(err)
 		}
@@ -60,7 +60,7 @@ func formatCodeCmd(path string) tea.Cmd {
 	return func() tea.Msg {
 		time.Sleep(time.Second * 1)
 
-		if err := runner.RunGoFmt(path); err != nil {
+		if err := shell.RunGoFmt(path); err != nil {
 			return InstallErrorMsg(err)
 		}
 		return ProjectFormattedMsg{}
