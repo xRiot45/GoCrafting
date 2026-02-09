@@ -79,6 +79,12 @@ func GenerateAddons(config core.ProjectConfig) error {
 		}
 	}
 
+	if config.HasAddon("Editor Config File") {
+		if err := renderAndWrite(config, "shared/editorconfig.tmpl", ".editorconfig"); err != nil {
+			return fmt.Errorf("failed to create .editorconfig: %w", err)
+		}
+	}
+
 	return nil
 }
 

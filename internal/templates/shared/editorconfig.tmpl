@@ -1,0 +1,150 @@
+# ============================================================
+# .editorconfig — Editor Configuration Template for Go Projects
+# ============================================================
+# EditorConfig helps maintain consistent coding styles between
+# different editors and IDEs used by a team.
+#
+# Supported by:
+# - VS Code
+# - GoLand / IntelliJ
+# - Vim / Neovim
+# - Sublime
+# - Atom
+# - Many others
+#
+# Documentation:
+# https://editorconfig.org
+# ============================================================
+
+# Indicate this is the root EditorConfig file
+root = true
+
+# ============================================================
+# DEFAULT SETTINGS (ALL FILES)
+# ============================================================
+# These rules apply to all files unless overridden.
+# ------------------------------------------------------------
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+
+# ============================================================
+# GO FILES
+# ============================================================
+# Go has strict formatting conventions enforced by gofmt.
+# Tabs must be used for indentation in Go source files.
+# ------------------------------------------------------------
+[*.go]
+indent_style = tab
+indent_size = 4
+
+
+# ============================================================
+# GO MOD FILE
+# ============================================================
+# go.mod should not contain trailing whitespace.
+# ------------------------------------------------------------
+[go.mod]
+indent_style = tab
+trim_trailing_whitespace = true
+
+
+# ============================================================
+# GO SUM FILE
+# ============================================================
+# go.sum must remain machine-generated and untouched.
+# ------------------------------------------------------------
+[go.sum]
+indent_style = tab
+trim_trailing_whitespace = false
+
+
+# ============================================================
+# YAML FILES
+# ============================================================
+# Used for CI/CD, Docker Compose, Kubernetes, etc.
+# ------------------------------------------------------------
+[*.yml]
+indent_style = space
+indent_size = 2
+
+[*.yaml]
+indent_style = space
+indent_size = 2
+
+
+# ============================================================
+# JSON FILES
+# ============================================================
+[*.json]
+indent_style = space
+indent_size = 2
+
+
+# ============================================================
+# MARKDOWN FILES
+# ============================================================
+# Do not trim trailing whitespace in markdown because it is
+# sometimes used to enforce line breaks.
+# ------------------------------------------------------------
+[*.md]
+trim_trailing_whitespace = false
+indent_style = space
+indent_size = 2
+
+
+# ============================================================
+# SHELL SCRIPTS
+# ============================================================
+[*.sh]
+indent_style = space
+indent_size = 2
+
+
+# ============================================================
+# MAKEFILE
+# ============================================================
+# Makefiles require tabs for commands.
+# ------------------------------------------------------------
+[Makefile]
+indent_style = tab
+
+
+# ============================================================
+# DOCKERFILE
+# ============================================================
+[Dockerfile]
+indent_style = space
+indent_size = 2
+
+
+# ============================================================
+# ENV FILES
+# ============================================================
+[*.env]
+indent_style = space
+indent_size = 2
+
+
+# ============================================================
+# OPTIONAL SETTINGS (UNCOMMENT IF NEEDED)
+# ============================================================
+# max_line_length = 100
+# insert_final_newline = true
+# trim_trailing_whitespace = true
+
+
+# ============================================================
+# TEAM GUIDELINES
+# ============================================================
+# - Go code formatting should always be enforced using gofmt
+# - Use "go fmt ./..." before committing
+# - Use "go vet ./..." for static analysis
+# - Prefer tabs in Go files, spaces elsewhere
+# - Keep YAML/JSON indentation at 2 spaces
+# ============================================================
