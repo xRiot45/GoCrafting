@@ -1,0 +1,62 @@
+# ==============================================================================
+# LEFTHOOK CONFIGURATION
+# ==============================================================================
+# Lefthook is a Git hooks manager that runs checks before you commit or push.
+# It ensures that only high-quality code enters the repository.
+#
+# Installation:
+#   go install github.com/evilmartians/lefthook@latest
+#   lefthook install
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# PRE-COMMIT HOOK
+# ------------------------------------------------------------------------------
+# Runs automatically when you execute 'git commit'.
+# Focuses on Code Style, Formatting, and Static Analysis.
+pre-commit:
+  parallel: true # Run commands simultaneously for speed
+  commands:
+    # 1. Check for basic syntax errors and style
+    gofmt:
+      tags: style
+      glob: "*.go" # Only run on Go files
+      run: gofmt -l {staged_files}
+    
+    # 2. Check for unused dependencies
+    go-mod-tidy:
+      tags: backend
+      files: git diff --name-only HEAD go.mod
+      run: go mod tidy && git diff --exit-code go.mod
+    
+    # 3. Static Analysis (Linter)
+    # Requires: golangci-lint installed
+    linter:
+      tags: backend style
+      glob: "*.go"
+      run: golangci-lint run {staged_files}
+
+    # 4. Prevent committing secrets (Optional but Recommended)
+    # Checks for AWS keys, tokens, etc.
+    # secrets:
+    #   run: gitleaks protect --verbose --redact --staged
+
+# ------------------------------------------------------------------------------
+# PRE-PUSH HOOK
+# ------------------------------------------------------------------------------
+# Runs automatically when you execute 'git push'.
+# Focuses on Integrity and Testing.
+pre-push:
+  parallel: false
+  commands:
+    # 1. Run Unit Tests
+    # We run ALL tests here to ensure no regression bugs are pushed.
+    tests:
+      tags: backend test
+      run: go test -v -race ./...
+
+    # 2. Build Check
+    # Ensures the code actually compiles before pushing
+    build-check:
+      tags: backend
+      run: go build -v ./cmd/main.go

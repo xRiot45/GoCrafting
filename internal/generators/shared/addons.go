@@ -91,6 +91,14 @@ func GenerateAddons(config core.ProjectConfig) error {
 		}
 	}
 
+	if config.HasAddon("Lefthook (Commit Linter)") {
+		if err := renderAndWrite(config, "shared/lefthook.tmpl", "lefthook.yaml"); err != nil {
+			return fmt.Errorf("failed to create lefthook.yaml: %w", err)
+		}
+
+		fmt.Println("   ⚠️  IMPORTANT: Run 'lefthook install' inside the project to activate hooks.")
+	}
+
 	return nil
 }
 
