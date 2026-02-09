@@ -44,6 +44,7 @@ const (
 // AddonList contains the list of available add-ons for project generation.
 var AddonList = []string{
 	"Environment File (.env)",
+	"Gitignore File",
 }
 
 // MainModel is the main struct that stores all TUI application data.

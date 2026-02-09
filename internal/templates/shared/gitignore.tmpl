@@ -1,18 +1,127 @@
+# ==============================================================================
+# GO BUILD ARTIFACTS
+# ==============================================================================
 # Binaries
-/bin
-/dist
+/bin/
+/dist/
+/build/
 *.exe
+*.exe~
 *.dll
-main
+*.so
+*.dylib
+
+# Test binaries
+*.test
+
+# Output of the 'go build' command (if named after project)
 {{ .ProjectName }}
+main
 
-# Vendor
-/vendor
+# ==============================================================================
+# GO MODULES & VENDORING
+# ==============================================================================
+# Local Go Workspace files
+go.work
+go.work.sum
 
-# Env
+# Vendor directory is usually ignored unless you want to commit dependencies
+vendor/
+
+# ==============================================================================
+# ENVIRONMENT & SECRETS (CRITICAL)
+# ==============================================================================
 .env
+.env.local
+.env.development
+.env.test
+.env.staging
+.env.production
+.env.*
 
-# IDE
-.vscode
-.idea
+# Keep the example file!
+!.env.example
+
+# Certificates & Keys
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+
+# ==============================================================================
+# TESTING & PROFILING
+# ==============================================================================
+# Coverage reports
+coverage.txt
+coverage.out
+coverage.html
+
+# Profiling data
+*.prof
+*.pprof
+cpu.out
+mem.out
+trace.out
+
+# ==============================================================================
+# IDEs & EDITORS
+# ==============================================================================
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains (GoLand, IntelliJ)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim / Neovim
 *.swp
+*.swo
+*.swn
+.netrwhist
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# ==============================================================================
+# OS GENERATED FILES
+# ==============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ==============================================================================
+# TOOLS & MISC
+# ==============================================================================
+# Air (Live Reload) temp directory
+tmp/
+.air_tmp/
+
+# Docker
+docker-compose.override.yml
+
+# Terraform (Infrastructure as Code)
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Lefthook / Git Hooks local config
+.lefthook/

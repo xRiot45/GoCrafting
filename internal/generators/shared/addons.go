@@ -31,6 +31,12 @@ func GenerateAddons(config core.ProjectConfig) error {
 		}
 	}
 
+	if config.HasAddon("Gitignore File") {
+		if err := renderAndWrite(config, "shared/gitignore.tmpl", ".gitignore"); err != nil {
+			return fmt.Errorf("failed to create .gitignore: %w", err)
+		}
+	}
+
 	return nil
 }
 
