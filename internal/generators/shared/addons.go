@@ -29,11 +29,18 @@ func GenerateAddons(config core.ProjectConfig) error {
 				return fmt.Errorf("failed to create %s: %w", output, err)
 			}
 		}
+
 	}
 
 	if config.HasAddon("Gitignore File") {
 		if err := renderAndWrite(config, "shared/gitignore.tmpl", ".gitignore"); err != nil {
 			return fmt.Errorf("failed to create .gitignore: %w", err)
+		}
+	}
+
+	if config.HasAddon("Readme File") {
+		if err := renderAndWrite(config, "shared/readme.tmpl", "README.md"); err != nil {
+			return fmt.Errorf("failed to create README.md: %w", err)
 		}
 	}
 
