@@ -85,6 +85,12 @@ func GenerateAddons(config core.ProjectConfig) error {
 		}
 	}
 
+	if config.HasAddon("Makefile (Shortcut Commands)") {
+		if err := renderAndWrite(config, "shared/makefile.tmpl", "Makefile"); err != nil {
+			return fmt.Errorf("failed to create Makefile: %w", err)
+		}
+	}
+
 	return nil
 }
 

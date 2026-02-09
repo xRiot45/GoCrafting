@@ -1,0 +1,115 @@
+# ==============================================================================
+# MAKEFILE - PROJECT AUTOMATION
+# ==============================================================================
+# This Makefile serves as the command center for the project.
+# It encapsulates complex commands into simple targets (e.g., 'make build').
+#
+# Usage:
+#   make [target]
+#
+# Example:
+#   make run       - Run the application locally
+#   make build     - Build the binary for production
+#   make help      - Show available commands
+# ==============================================================================
+
+# Project Variables
+APP_NAME := {{ .ProjectName }}
+CMD_DIR := ./cmd
+BIN_DIR := ./bin
+MAIN_FILE := $(CMD_DIR)/main.go
+
+# Go Commands
+GO := go
+GOFMT := gofmt
+GOLINT := golangci-lint
+
+# Build Flags (Injects Version, Commit, and Date into the binary)
+# These variables must exist in your main.go or version.go
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
+DATE := $(shell date +%Y-%m-%dT%H:%M:%S%z)
+LDFLAGS := -ldflags="-s -w -X 'main.Version=$(VERSION)' -X 'main.Commit=$(COMMIT)' -X 'main.Date=$(DATE)'"
+
+# Docker Variables
+DOCKER_COMPOSE := docker-compose
+CONTAINER_NAME := $(APP_NAME)-app
+
+# ==============================================================================
+# 1. GENERAL COMMANDS
+# ==============================================================================
+.PHONY: all help
+
+all: help
+
+## help: Show this help message
+help:
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Available targets:"
+	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' |  sed -e 's/^/ /'
+
+# ==============================================================================
+# 2. DEVELOPMENT
+# ==============================================================================
+.PHONY: run tidy fmt lint test
+
+## run: Run the application locally (Hot reload recommended with 'air')
+run:
+	@echo "🚀 Running $(APP_NAME)..."
+	$(GO) run $(MAIN_FILE)
+
+## tidy: Clean up go.mod and go.sum
+tidy:
+	@echo "🧹 Cleaning modules..."
+	$(GO) mod tidy
+
+## fmt: Format all Go files
+fmt:
+	@echo "✨ Formatting code..."
+	$(GOFMT) -w .
+
+## lint: Run linter (golangci-lint)
+lint:
+	@echo "🔍 Linting code..."
+	$(GOLINT) run ./...
+
+## test: Run all unit tests with race detection
+test:
+	@echo "🧪 Running tests..."
+	$(GO) test -v -race -cover ./...
+
+# ==============================================================================
+# 3. BUILD & RELEASE
+# ==============================================================================
+.PHONY: build clean
+
+## build: Build the binary for the current OS (Optimized)
+build: clean
+	@echo "📦 Building binary..."
+	$(GO) build $(LDFLAGS) -o $(BIN_DIR)/$(APP_NAME) $(MAIN_FILE)
+	@echo "✅ Build success! Binary is at $(BIN_DIR)/$(APP_NAME)"
+
+## clean: Remove build artifacts
+clean:
+	@echo "🗑️  Cleaning build artifacts..."
+	@rm -rf $(BIN_DIR)
+
+# ==============================================================================
+# 4. DOCKER
+# ==============================================================================
+.PHONY: docker-up docker-down docker-logs
+
+## docker-up: Start the application and dependencies using Docker Compose
+docker-up:
+	@echo "🐳 Starting Docker containers..."
+	$(DOCKER_COMPOSE) up -d --build
+
+## docker-down: Stop and remove Docker containers
+docker-down:
+	@echo "🛑 Stopping Docker containers..."
+	$(DOCKER_COMPOSE) down
+
+## docker-logs: View logs from the application container
+docker-logs:
+	$(DOCKER_COMPOSE) logs -f app
