@@ -1,0 +1,104 @@
+# ==============================================================================
+# DEPENDABOT CONFIGURATION - AUTOMATED DEPENDENCY MANAGEMENT
+# ==============================================================================
+# This file configures GitHub Dependabot to automatically keep your dependencies
+# secure and up-to-date. It handles both Go modules and GitHub Actions workflows.
+#
+# Documentation: https://docs.github.com/en/code-security/dependabot
+# ==============================================================================
+
+version: 2
+
+updates:
+  # ============================================================================
+  # 1. GO MODULES (Backend Dependencies)
+  # ============================================================================
+  - package-ecosystem: "gomod"
+    directory: "/"
+    
+    # --------------------------------------------------------------------------
+    # Schedule
+    # --------------------------------------------------------------------------
+    # Check for updates once a week (Monday at 06:00 UTC).
+    # Daily checks can be noisy; weekly is a good balance for stability.
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Jakarta"
+
+    # --------------------------------------------------------------------------
+    # Grouping Strategy (Anti-Spam)
+    # --------------------------------------------------------------------------
+    # Instead of creating 10 PRs for 10 library updates, Dependabot will
+    # group them into single PRs based on semantic versioning rules.
+    groups:
+      # Group all patch updates (v1.0.1 -> v1.0.2) into one PR.
+      # These are usually safe to merge automatically.
+      patch-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+    # --------------------------------------------------------------------------
+    # PR Limits & Reviewers
+    # --------------------------------------------------------------------------
+    # Limit open PRs to prevent flooding the repository.
+    open-pull-requests-limit: 10
+    
+    # Automatically add labels to PRs for easier filtering.
+    labels:
+      - "dependencies"
+      - "go"
+      - "backend"
+
+    # Optional: Assign specific reviewers (uncomment to use)
+    # reviewers:
+    #   - "my-username"
+    # assignees:
+    #   - "my-username"
+
+    # --------------------------------------------------------------------------
+    # Commit Message Style
+    # --------------------------------------------------------------------------
+    # Ensure commit messages follow "Conventional Commits" standard.
+    # Example: chore(deps): bump github.com/gin-gonic/gin from 1.7 to 1.8
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+
+    # --------------------------------------------------------------------------
+    # Ignore Rules (Optional)
+    # --------------------------------------------------------------------------
+    # Use this if you want to pin a specific version or ignore major updates
+    # that might break your API.
+    # ignore:
+    #   - dependency-name: "github.com/some/breaking-lib"
+    #     versions: ["2.x", "3.x"]
+
+  # ============================================================================
+  # 2. GITHUB ACTIONS (CI/CD Workflows)
+  # ============================================================================
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    
+    # Check for updates monthly since Actions change less frequently.
+    schedule:
+      interval: "monthly"
+      
+    # Group all GitHub Actions updates into a single PR.
+    groups:
+      actions-updates:
+        patterns:
+          - "*"
+
+    labels:
+      - "ci-cd"
+      - "github-actions"
+
+    commit-message:
+      prefix: "ci(deps)"
+      include: "scope"

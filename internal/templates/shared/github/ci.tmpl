@@ -1,0 +1,138 @@
+# ==============================================================================
+# CI CONFIGURATION - CONTINUOUS INTEGRATION PIPELINE
+# ==============================================================================
+# This workflow is the first line of defense. It runs on every Push and Pull Request
+# to ensure code quality, security, and cross-platform compatibility.
+# ==============================================================================
+
+name: Go Quality Assurance
+
+# ------------------------------------------------------------------------------
+# TRIGGERS
+# ------------------------------------------------------------------------------
+on:
+  push:
+    branches: [ "main", "master" ]
+    paths-ignore:
+      - '**.md' # Ignore documentation changes to save CI minutes
+  pull_request:
+    branches: [ "main", "master" ]
+    paths-ignore:
+      - '**.md'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Required for some security scanners to upload results
+  security-events: write 
+
+jobs:
+
+  # ============================================================================
+  # JOB 1: CODE QUALITY & CONSISTENCY
+  # ============================================================================
+  # This job checks for syntax errors, linting issues, and module consistency.
+  # It runs fast to fail fast.
+  quality:
+    name: 🔍 Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true # Automatically caches Go modules
+
+      # ------------------------------------------------------------------------
+      # Consistency Check
+      # ------------------------------------------------------------------------
+      # Ensures that go.mod and go.sum are strictly up to date.
+      # If this step fails, it means the developer forgot to run 'go mod tidy'.
+      - name: Verify Dependencies
+        run: |
+          go mod tidy
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::go.mod or go.sum are not tidy. Please run 'go mod tidy' and push again."
+            exit 1
+          fi
+
+      # ------------------------------------------------------------------------
+      # Linting
+      # ------------------------------------------------------------------------
+      # Uses golangci-lint, the industry standard for Go linting.
+      # It checks for bugs, performance issues, and code style.
+      - name: Run Linter
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=5m --out-format=colored-line-number
+
+  # ============================================================================
+  # JOB 2: SECURITY AUDIT
+  # ============================================================================
+  # This job scans the code and dependencies for known vulnerabilities.
+  security:
+    name: 🛡️ Security Audit
+    runs-on: ubuntu-latest
+    needs: quality # Only run if quality check passes
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      # ------------------------------------------------------------------------
+      # Vulnerability Check (govulncheck)
+      # ------------------------------------------------------------------------
+      # Scans the binary and source code for vulnerabilities in dependencies.
+      # Supported by the Go team.
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run Vulnerability Scanner
+        run: govulncheck ./...
+
+  # ============================================================================
+  # JOB 3: CROSS-PLATFORM TESTING & BUILDING
+  # ============================================================================
+  # This job ensures the application compiles and runs correctly on different OSs.
+  test:
+    name: 🧪 Test & Build ({{ "${{ matrix.os }}" }})
+    runs-on: {{ "${{ matrix.os }}" }}
+    needs: quality # Only run if quality check passes
+    strategy:
+      fail-fast: false # If one OS fails, let others finish
+      matrix:
+        # We test on Linux, Windows, and macOS to ensure portability
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
+      # ------------------------------------------------------------------------
+      # Unit Testing with Race Detection
+      # ------------------------------------------------------------------------
+      # The -race flag is crucial for catching concurrency bugs (goroutine leaks).
+      - name: Run Unit Tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      # ------------------------------------------------------------------------
+      # Compilation Check
+      # ------------------------------------------------------------------------
+      # Verifies that the code compiles into a binary without errors.
+      - name: Build Binary
+        run: go build -v ./...

@@ -47,6 +47,7 @@ var AddonList = []string{
 	"Gitignore File",
 	"Readme File",
 	"Dockerfile",
+	"GitHub Actions (CI/CD)",
 }
 
 // MainModel is the main struct that stores all TUI application data.

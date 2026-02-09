@@ -1,0 +1,172 @@
+# ==============================================================================
+# GORELEASER CONFIGURATION
+# ==============================================================================
+# This file defines the build, packaging, and release process for your application.
+# It is used automatically by the GitHub Actions workflow (.github/workflows/release.yml).
+#
+# Key Features Configured:
+# 1. Cross-Compilation: Builds for Linux, Windows, and macOS (Intel & Apple Silicon).
+# 2. Optimization: Strips debug symbols to reduce binary size.
+# 3. Versioning: Injects version/commit/date into the binary via ldflags.
+# 4. Changelog: Auto-generates release notes based on Conventional Commits.
+#
+# Official Documentation: https://goreleaser.com
+# ==============================================================================
+
+# The project name (Injected by GoCrafting CLI)
+project_name: {{ .ProjectName }}
+
+# The minimum GoReleaser version required
+version: 2
+
+# ==============================================================================
+# 1. PRE-BUILD HOOKS
+# ==============================================================================
+before:
+  hooks:
+    # Ensure go.mod and go.sum are clean and up-to-date before building
+    - go mod tidy
+    # Optional: Run tests before releasing. Uncomment if desired.
+    # - go test ./...
+
+# ==============================================================================
+# 2. BUILD CONFIGURATION
+# ==============================================================================
+builds:
+  - env:
+      # CGO_ENABLED=0 ensures the binary is statically linked.
+      # This makes the binary portable across different Linux distributions
+      # (e.g., runs on Alpine, Debian, CentOS without dependency issues).
+      - CGO_ENABLED=0
+    
+    # --------------------------------------------------------------------------
+    # Target Operating Systems
+    # --------------------------------------------------------------------------
+    goos:
+      - linux
+      - windows
+      - darwin # macOS
+
+    # --------------------------------------------------------------------------
+    # Target Architectures
+    # --------------------------------------------------------------------------
+    goarch:
+      - amd64 # Standard Intel/AMD 64-bit
+      - arm64 # ARM 64-bit (includes Apple Silicon M1/M2/M3 & AWS Graviton)
+
+    # --------------------------------------------------------------------------
+    # Binary Optimization & Version Injection
+    # --------------------------------------------------------------------------
+    ldflags:
+      # -s -w: Strip debug information and DWARF tables to reduce binary size by ~25%
+      - -s -w
+      # Inject metadata into the 'main' package variables.
+      # Note: These variables must exist in your main.go or version.go
+      - -X main.version={{ "{{" }} .Version {{ "}}" }}
+      - -X main.commit={{ "{{" }} .Commit {{ "}}" }}
+      - -X main.date={{ "{{" }} .Date {{ "}}" }}
+
+    # Ignore specific OS/Arch combinations that are rarely used or unsupported
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+# ==============================================================================
+# 3. ARCHIVES (PACKAGING)
+# ==============================================================================
+archives:
+  - format: tar.gz
+    # Windows users typically prefer ZIP files
+    format_overrides:
+      - goos: windows
+        format: zip
+    
+    # --------------------------------------------------------------------------
+    # File Naming Convention
+    # --------------------------------------------------------------------------
+    # Generates names like: MyProject_1.0.0_Linux_x86_64.tar.gz
+    name_template: >-
+      {{ "{{" }} .ProjectName {{ "}}" }}_
+      {{ "{{" }}- .Version {{ "}}" }}_
+      {{ "{{" }}- .Os {{ "}}" }}_
+      {{ "{{" }}- .Arch {{ "}}" }}
+
+    # Replace internal OS/Arch names with user-friendly names
+    replacements:
+      darwin: macOS
+      linux: Linux
+      windows: Windows
+      amd64: x86_64
+      arm64: arm64
+
+    # --------------------------------------------------------------------------
+    # Additional Files
+    # --------------------------------------------------------------------------
+    # These files will be included inside the zip/tar.gz archive
+    files:
+      - README.md
+      - LICENSE
+      - .env.example
+
+# ==============================================================================
+# 4. CHECKSUMS
+# ==============================================================================
+# Generates a checksums.txt file to allow users to verify binary integrity.
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+# ==============================================================================
+# 5. SNAPSHOTS (DEV BUILDS)
+# ==============================================================================
+# Configuration for builds that are NOT tagged (e.g., testing locally with --snapshot)
+snapshot:
+  version_template: "{{ "{{" }} .Version {{ "}}" }}-SNAPSHOT-{{ "{{" }} .ShortCommit {{ "}}" }}"
+
+# ==============================================================================
+# 6. CHANGELOG GENERATOR
+# ==============================================================================
+# Automatically groups commit messages to create a clean release note.
+# This relies on using "Conventional Commits" (e.g., "feat: add login").
+changelog:
+  sort: asc
+  use: github
+  groups:
+    - title: '🚀 New Features'
+      regexp: "^.*feat((\\([\\w\\-\\.]+\\))?):"
+      order: 0
+    - title: '🐛 Bug Fixes'
+      regexp: "^.*fix((\\([\\w\\-\\.]+\\))?):"
+      order: 1
+    - title: '⚡ Performance Improvements'
+      regexp: "^.*perf((\\([\\w\\-\\.]+\\))?):"
+      order: 2
+    - title: '🔒 Security Updates'
+      regexp: "^.*sec((\\([\\w\\-\\.]+\\))?):"
+      order: 3
+    - title: '🔧 Maintenance & Chores'
+      regexp: "^.*chore((\\([\\w\\-\\.]+\\))?):"
+      order: 99
+  
+  # Hide noise from the release notes
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^merge:'
+      - '^style:'
+      - 'README'
+
+# ==============================================================================
+# 7. GITHUB RELEASE
+# ==============================================================================
+release:
+  # If the tag contains "rc" (e.g., v1.0.0-rc1), mark as Pre-release on GitHub
+  prerelease: auto
+  
+  # Create the release as a draft (set to false to publish immediately)
+  draft: false
+  
+  # If you re-run the pipeline, update the existing draft
+  replace_existing_draft: true

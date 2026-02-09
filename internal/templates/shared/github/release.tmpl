@@ -1,0 +1,84 @@
+# ==============================================================================
+# RELEASE CONFIGURATION - AUTOMATED RELEASE PIPELINE
+# ==============================================================================
+# This workflow handles the distribution of your application.
+# It runs ONLY when you push a semantic version tag (e.g., v1.0.0).
+# It will compile binaries for Windows, Linux, and macOS, generate a changelog,
+# and publish a GitHub Release.
+# ==============================================================================
+
+name: Release Binary
+
+# ------------------------------------------------------------------------------
+# TRIGGERS
+# ------------------------------------------------------------------------------
+on:
+  push:
+    # This workflow listens strictly for tags starting with 'v'
+    # Example: git tag v1.0.0 && git push origin v1.0.0
+    tags:
+      - 'v*'
+
+permissions:
+  # Required to create the Release page and upload binary assets
+  contents: write
+  # Required if you plan to push Docker images to GHCR (GitHub Container Registry)
+  packages: write
+
+jobs:
+  goreleaser:
+    name: 🚀 Publish Release
+    runs-on: ubuntu-latest
+    steps:
+      # ------------------------------------------------------------------------
+      # 1. Checkout Code
+      # ------------------------------------------------------------------------
+      # We need 'fetch-depth: 0' to pull the entire git history.
+      # GoReleaser needs this to generate the Changelog based on commit messages.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ------------------------------------------------------------------------
+      # 2. Setup Go Environment
+      # ------------------------------------------------------------------------
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
+      # ------------------------------------------------------------------------
+      # 3. Run GoReleaser
+      # ------------------------------------------------------------------------
+      # This is the magic step. It reads your .goreleaser.yaml file at the root
+      # and performs cross-compilation, archiving, and uploading.
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          # GITHUB_TOKEN is a secret automatically provided by GitHub Actions.
+          # You do NOT need to set this manually in your repo settings.
+          GITHUB_TOKEN: {{ "${{ secrets.GITHUB_TOKEN }}" }}
+
+          # If you want to publish Docker images to DockerHub, you would add:
+          # DOCKER_USERNAME: {{ "${{ secrets.DOCKER_USERNAME }}" }}
+          # DOCKER_PASSWORD: {{ "${{ secrets.DOCKER_PASSWORD }}" }}
+
+# ==============================================================================
+# HOW TO TRIGGER THIS RELEASE?
+# ==============================================================================
+# Run the following commands in your local terminal:
+#
+# 1. Create a tag:
+#    git tag -a v1.0.0 -m "First release"
+#
+# 2. Push the tag:
+#    git push origin v1.0.0
+#
+# Check the "Actions" tab in your repository to see the release process!
+# ==============================================================================

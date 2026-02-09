@@ -48,12 +48,33 @@ func GenerateAddons(config core.ProjectConfig) error {
 		dockerFiles := map[string]string{
 			"shared/docker/Dockerfile.tmpl":     "Dockerfile",
 			"shared/docker/.dockerignore.tmpl":  ".dockerignore",
-			"shared/docker/docker-compose.tmpl": "docker-compose.yml",
+			"shared/docker/docker-compose.tmpl": "docker-compose.yaml",
 		}
 
 		for tpl, output := range dockerFiles {
 			if err := renderAndWrite(config, tpl, output); err != nil {
 				return fmt.Errorf("failed to create %s: %w", output, err)
+			}
+		}
+	}
+
+	if config.HasAddon("GitHub Actions (CI/CD)") {
+		workflowsDir := filepath.Join(config.ProjectName, ".github", "workflows")
+		if err := os.MkdirAll(workflowsDir, 0750); err != nil {
+			return fmt.Errorf("failed to create workflows dir: %w", err)
+		}
+
+		// 2. Map Template -> Output
+		ciFiles := map[string]string{
+			"shared/github/ci.tmpl":         ".github/workflows/ci.yaml",
+			"shared/github/release.tmpl":    ".github/workflows/release.yaml",
+			"shared/github/dependabot.tmpl": ".github/dependabot.yaml",
+			"shared/github/goreleaser.tmpl": ".goreleaser.yaml",
+		}
+
+		for tpl, output := range ciFiles {
+			if err := renderAndWrite(config, tpl, output); err != nil {
+				return fmt.Errorf("failed to generate %s: %w", output, err)
 			}
 		}
 	}
