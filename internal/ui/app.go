@@ -46,6 +46,7 @@ var AddonList = []string{
 	"Environment File (.env)",
 	"Gitignore File",
 	"Readme File",
+	"Dockerfile",
 }
 
 // MainModel is the main struct that stores all TUI application data.

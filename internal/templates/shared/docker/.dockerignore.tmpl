@@ -1,0 +1,177 @@
+# ------------------------------------------------------------
+# .dockerignore Template (Production Ready)
+# ------------------------------------------------------------
+# This file prevents unnecessary files from being sent to the
+# Docker build context. Keeping this file well-maintained will:
+#
+# - Reduce Docker image build time
+# - Reduce image size
+# - Prevent secrets from leaking into images
+# - Improve build caching
+#
+# Documentation:
+# https://docs.docker.com/build/building/context/#dockerignore-files
+# ------------------------------------------------------------
+
+# ==============================
+# Version Control
+# ==============================
+.git
+.gitignore
+.gitattributes
+
+# GitHub / GitLab configs
+.github
+.gitlab
+
+# ==============================
+# Go Build Artifacts
+# ==============================
+bin/
+build/
+dist/
+out/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go coverage files
+coverage/
+*.coverprofile
+coverage.out
+
+# ==============================
+# Dependency / Vendor (optional)
+# ==============================
+# Ignore vendor only if you download modules during build
+# Remove this rule if your build depends on vendor directory
+vendor/
+
+# ==============================
+# Logs
+# ==============================
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# ==============================
+# Environment / Secrets
+# ==============================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+secrets/
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# ==============================
+# OS Generated Files
+# ==============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Linux temporary files
+*~
+*.swp
+*.swo
+
+# ==============================
+# Editor / IDE
+# ==============================
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# JetBrains
+.out/
+
+# Vim
+*.swp
+
+# ==============================
+# Node (if frontend exists in repo)
+# ==============================
+node_modules/
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+
+# ==============================
+# Docker Files (optional)
+# ==============================
+# Uncomment if image should not include these
+# Dockerfile
+# docker-compose.yml
+# docker-compose.*.yml
+
+# ==============================
+# Test / Mock Data
+# ==============================
+tests/
+testdata/
+mock/
+mocks/
+
+# ==============================
+# Documentation
+# ==============================
+docs/
+*.md
+
+# Keep README if desired:
+# !README.md
+
+# ==============================
+# Temporary / Cache
+# ==============================
+tmp/
+temp/
+.cache/
+*.cache
+
+# Go build cache (local only)
+.gocache/
+
+# ==============================
+# Kubernetes / Terraform (optional)
+# ==============================
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# ==============================
+# CI/CD (optional)
+# ==============================
+.circleci/
+
+# ==============================
+# Misc
+# ==============================
+*.bak
+*.tmp
+*.old
+
+# ------------------------------------------------------------
+# NOTES
+# ------------------------------------------------------------
+# 1. Always exclude secrets and local environment files.
+# 2. Keep the build context minimal for faster builds.
+# 3. Review this file when new tools are added.
+# 4. Do not ignore go.mod and go.sum.
+# 5. Do not ignore application source code.
+# ------------------------------------------------------------

@@ -1,0 +1,123 @@
+# ------------------------------------------------------------
+# Dockerfile Template for Go Applications (Production Ready)
+# ------------------------------------------------------------
+# This template uses a multi-stage build to produce a small,
+# secure, and production-ready container image.
+#
+# Stages:
+# 1. builder  -> compile Go binary
+# 2. runtime  -> minimal container to run compiled binary
+#
+# Customize variables below to match your project structure.
+# ------------------------------------------------------------
+
+# ==============================
+# Stage 1 — Builder
+# ==============================
+# Use official Go image for building the application
+FROM golang:1.22-alpine AS builder
+
+# Install required packages for building Go modules
+# git is required for private modules in some cases
+RUN apk add --no-cache git ca-certificates tzdata
+
+# Set working directory inside container
+WORKDIR /app
+
+# Copy go module files first to leverage Docker layer caching
+COPY go.mod go.sum ./
+
+# Download dependencies (cached unless go.mod/go.sum changes)
+RUN go mod download
+
+# Copy the rest of the source code
+COPY . .
+
+# Build configuration
+# CGO disabled ensures static binary
+# Adjust GOOS and GOARCH if needed
+ENV CGO_ENABLED=0
+ENV GOOS=linux
+ENV GOARCH=amd64
+
+# Output binary name
+ARG BINARY_NAME=app
+
+# Build the Go binary
+# Modify cmd/app/main.go if your entrypoint differs
+RUN go build -ldflags="-s -w" -o /${BINARY_NAME} cmd/app/main.go
+
+
+# ==============================
+# Stage 2 — Runtime
+# ==============================
+# Use minimal base image for security and size
+FROM alpine:3.19
+
+# Install runtime dependencies
+RUN apk add --no-cache ca-certificates tzdata
+
+# Create non-root user for security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+# Copy compiled binary from builder stage
+ARG BINARY_NAME=app
+COPY --from=builder /${BINARY_NAME} ./app
+
+# Optional: copy environment file (remove if not needed)
+# COPY .env .env
+
+# Set ownership to non-root user
+RUN chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
+
+# Application port (change if needed)
+EXPOSE 8080
+
+# Healthcheck (optional but recommended)
+# Replace /health with your health endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+
+# Run the binary
+ENTRYPOINT ["./app"]
+
+
+# ------------------------------------------------------------
+# OPTIONAL PRODUCTION NOTES
+# ------------------------------------------------------------
+# 1. Consider using distroless image for smaller attack surface:
+#    gcr.io/distroless/base-debian12
+#
+# 2. If using CGO (SQLite, etc), remove CGO_ENABLED=0
+#
+# 3. For private modules you may need:
+#    git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"
+#
+# 4. Add labels for metadata:
+# LABEL org.opencontainers.image.source="https://github.com/your/repo"
+# LABEL org.opencontainers.image.description="Your Go service"
+#
+# 5. If using migrations, run them before ENTRYPOINT.
+#
+# 6. Use docker build args:
+#    docker build --build-arg BINARY_NAME=service -t go-service .
+#
+# 7. Keep .dockerignore file to reduce build context size.
+#
+# ------------------------------------------------------------
+# Example .dockerignore
+# ------------------------------------------------------------
+# .git
+# .gitignore
+# node_modules
+# tmp
+# bin
+# tests
+# *.log
+# README.md
+# ------------------------------------------------------------

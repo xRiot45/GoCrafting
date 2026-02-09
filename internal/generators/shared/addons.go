@@ -44,6 +44,20 @@ func GenerateAddons(config core.ProjectConfig) error {
 		}
 	}
 
+	if config.HasAddon("Dockerfile") {
+		dockerFiles := map[string]string{
+			"shared/docker/Dockerfile.tmpl":     "Dockerfile",
+			"shared/docker/.dockerignore.tmpl":  ".dockerignore",
+			"shared/docker/docker-compose.tmpl": "docker-compose.yml",
+		}
+
+		for tpl, output := range dockerFiles {
+			if err := renderAndWrite(config, tpl, output); err != nil {
+				return fmt.Errorf("failed to create %s: %w", output, err)
+			}
+		}
+	}
+
 	return nil
 }
 
