@@ -1,53 +1,44 @@
-// Package ui provides UI constants, styling, and terminal interface logic
-// for the GoCrafting CLI using the Lip Gloss library.
+// Package ui contains styles and themes for the terminal UI components.
 package ui
 
 import "github.com/charmbracelet/lipgloss"
 
-// logoASCII contains the ASCII art representation of the GoCrafting logo.
-const logoASCII = `
-  ____             ____            __ _   _                 
- / ___|  ___      / ___|_ __ __ _ / _| |_(_)_ __   __ _ 
-| |  _  / _ \    | |   | '__/ _' | |_| __| | '_ \ / _' |
-| |_| | (_) |    | |___| | | (_| |  _| |_| | | | | (_| |
- \____| \___/     \____|_|  \__,_|_|  \__|_|_| |_|\__, |
-                                                  |___/ 
-`
-
+// --- PALETTE (Professional DevOps Theme) ---
 var (
-	// ColorPrimary is the royal blue color used for main branding.
-	ColorPrimary = lipgloss.Color("#566ef4")
-
-	// ColorSecondary is a snow white color for primary text readability.
-	ColorSecondary = lipgloss.Color("#FAFAFA")
-
-	// ColorAccent is a neon cyan color for highlighting inputs and active states.
-	ColorAccent = lipgloss.Color("#00f2ff")
-
-	// ColorGold is a gold color for success messages or artisan-level elements.
-	ColorGold = lipgloss.Color("#FFD700")
-
-	// ColorMuted is a dimmed gray color for secondary hints and help text.
-	ColorMuted = lipgloss.Color("#626262")
+	ColorFocus   = lipgloss.Color("#3B82F6") // Bright Blue (Active)
+	ColorBlur    = lipgloss.Color("#4B5563") // Gray (Inactive)
+	ColorSuccess = lipgloss.Color("#10B981") // Emerald Green (Done)
+	ColorText    = lipgloss.Color("#F3F4F6") // Whiteish
+	ColorBg      = lipgloss.Color("#111827") // Dark Background (Optional if terminal is dark)
 )
 
+// --- LAYOUT STYLES ---
 var (
-	// LogoStyle defines the visual style for the main ASCII logo.
-	LogoStyle = lipgloss.NewStyle().
-			Foreground(ColorPrimary).
-			Bold(true)
+	// Sidebar (Kiri): Lebar tetap, border kanan
+	SidebarStyle = lipgloss.NewStyle().
+			Width(25).
+			PaddingRight(2).
+			Border(lipgloss.NormalBorder(), false, true, false, false). // Border kanan saja
+			BorderForeground(ColorBlur)
 
-	// TitleStyle defines the visual style for questions or section headers.
-	TitleStyle = lipgloss.NewStyle().
-			Foreground(ColorSecondary).
-			Bold(true)
+	// Main Content (Kanan): Padding kiri
+	MainContentStyle = lipgloss.NewStyle().
+				PaddingLeft(3).
+				PaddingTop(1)
 
-	// InputStyle defines the visual style for user-provided text inputs.
-	InputStyle = lipgloss.NewStyle().
-			Foreground(ColorAccent)
+	// Step (Sidebar Items)
+	StepPendingStyle = lipgloss.NewStyle().Foreground(ColorBlur)
+	StepActiveStyle  = lipgloss.NewStyle().Foreground(ColorFocus).Bold(true)
+	StepDoneStyle    = lipgloss.NewStyle().Foreground(ColorSuccess)
 
-	// HintStyle defines the visual style for small help hints at the bottom.
-	HintStyle = lipgloss.NewStyle().
-			Foreground(ColorMuted).
-			Italic(true)
+	// Header di Main Window
+	HeaderStyle = lipgloss.NewStyle().
+			Foreground(ColorText).
+			Background(ColorFocus).
+			Bold(true).
+			Padding(0, 1).
+			MarginBottom(1)
+
+	// Helper Text
+	DescStyle = lipgloss.NewStyle().Foreground(ColorBlur).Italic(true)
 )

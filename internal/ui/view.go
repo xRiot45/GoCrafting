@@ -1,3 +1,4 @@
+// Package ui contains the terminal UI views and rendering logic.
 package ui
 
 import (
@@ -9,199 +10,218 @@ import (
 	"github.com/xRiot45/gocrafting/internal/generators"
 )
 
-// View renders the UI view to a string.
-func (uiModel MainModel) View() string {
-	if uiModel.Err != nil {
-		return lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FF0000")).
-			Bold(true).
-			Render(fmt.Sprintf("\n❌ Error Encountered: %v\n\nPress Ctrl+C to exit.", uiModel.Err))
+// View renders the entire UI based on the current state of the MainModel.
+func (m MainModel) View() string {
+	if m.Err != nil {
+		return renderError(m.Err)
+	}
+	if m.IsQuitting {
+		return "\n  👋 Aborting process.\n"
 	}
 
-	if uiModel.IsQuitting {
-		return "Crafting cancelled.\n"
+	// 1. Render Sidebar (Progress Tracker)
+	sidebar := renderSidebar(m)
+
+	// 2. Render Main Window (Active Step)
+	mainContent := renderMainContent(m)
+
+	// 3. Gabungkan Keduanya (Layout Horizontal)
+	// Output: [ Sidebar | Main Content ]
+	ui := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, mainContent)
+
+	// Tambahkan margin luar agar tidak nempel pinggir terminal
+	return lipgloss.NewStyle().Margin(1, 2).Render(ui)
+}
+
+// --- SIDEBAR COMPONENT ---
+func renderSidebar(m MainModel) string {
+	var s strings.Builder
+
+	// Logo Kecil di atas Sidebar
+	s.WriteString(lipgloss.NewStyle().Foreground(ColorFocus).Bold(true).Render("GO CRAFTING") + "\n\n")
+
+	// Daftar Step
+	steps := []struct {
+		state SessionState
+		label string
+	}{
+		{StateInputProjectName, "Identity"},
+		{StateInputModuleName, "Go Module"},
+		{StateSelectProjectScale, "Architecture"},
+		{StateSelectTemplate, "Template"},
+		{StateSelectFramework, "Framework"},
+		{StateSelectDatabaseDriver, "Database"},
+		{StateSelectAddons, "Add-ons"},
+		{StateInstalling, "Installation"},
 	}
 
-	viewString := LogoStyle.Render(logoASCII) + "\n\n"
-	successSymbol := lipgloss.NewStyle().Foreground(lipgloss.Color("#00FF00")).Render("✔")
+	for _, step := range steps {
+		var indicator, label string
 
-	// --- HEADER SECTION ---
-	if uiModel.ProjectName != "" && uiModel.CurrentState > StateInputProjectName {
-		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Project Name"), uiModel.ProjectName)
-	}
-	if uiModel.ModuleName != "" && uiModel.CurrentState > StateInputModuleName {
-		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Module Name "), uiModel.ModuleName)
-	}
-	if uiModel.CurrentState > StateSelectProjectScale {
-		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Project Scale"), uiModel.ProjectScale)
-	}
-	if uiModel.SelectedTemplate != "" && uiModel.CurrentState > StateSelectTemplate {
-		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Template    "), uiModel.SelectedTemplate)
-	}
-	if uiModel.SelectedFramework != "" && uiModel.CurrentState > StateSelectFramework {
-		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Framework   "), uiModel.SelectedFramework)
-	}
-	if uiModel.SelectedDatabaseDriver != "" && uiModel.CurrentState > StateSelectDatabaseDriver {
-		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Database Driver "), uiModel.SelectedDatabaseDriver)
-	}
-	if len(uiModel.SelectedAddonsIndices) > 0 && uiModel.CurrentState > StateSelectAddons {
-		var selectedAddons []string
-		for idx := range uiModel.SelectedAddonsIndices {
-			selectedAddons = append(selectedAddons, AddonList[idx])
+		if m.CurrentState == step.state {
+			// Step Aktif
+			indicator = "●"
+			label = StepActiveStyle.Render(step.label)
+			indicator = StepActiveStyle.Render(indicator)
+		} else if m.CurrentState > step.state {
+			// Step Selesai
+			indicator = "✔"
+			label = StepDoneStyle.Render(step.label)
+			indicator = StepDoneStyle.Render(indicator)
+		} else {
+			// Step Belum
+			indicator = "○"
+			label = StepPendingStyle.Render(step.label)
+			indicator = StepPendingStyle.Render(indicator)
 		}
-		viewString += fmt.Sprintf("%s %s: %s\n", successSymbol, TitleStyle.Render("Add-ons     "), strings.Join(selectedAddons, ", "))
+
+		s.WriteString(fmt.Sprintf("%s  %s\n", indicator, label))
 	}
 
-	if uiModel.CurrentState > StateInputProjectName {
-		viewString += "\n"
-	}
+	return SidebarStyle.Render(s.String())
+}
 
-	// --- INTERACTIVE SECTION ---
-	switch uiModel.CurrentState {
+// --- MAIN CONTENT COMPONENT ---
+func renderMainContent(m MainModel) string {
+	var s strings.Builder
+
+	switch m.CurrentState {
+
+	// --- INPUTS ---
 	case StateInputProjectName:
-		viewString += TitleStyle.Render("What is the name of your masterpiece?") + "\n"
-		viewString += HintStyle.Render("(e.g., my-project)") + "\n\n"
-		viewString += "  " + uiModel.TextInputComponent.View() + "\n\n"
-		viewString += HintStyle.Render("› press enter to continue")
+		s.WriteString(HeaderStyle.Render("PROJECT IDENTITY"))
+		s.WriteString("\n\n")
+		s.WriteString("Choose a name for your new service.\n")
+		s.WriteString(DescStyle.Render("Lowercase, hyphens allowed (e.g. payment-service)"))
+		s.WriteString("\n\n")
+		s.WriteString(m.TextInputComponent.View())
 
 	case StateInputModuleName:
-		viewString += TitleStyle.Render("Define your Go Module name:") + "\n"
-		viewString += HintStyle.Render("(e.g., github.com/username/my-project)") + "\n\n"
-		viewString += "  " + uiModel.TextInputComponent.View() + "\n\n"
-		viewString += HintStyle.Render("› press enter to continue")
+		s.WriteString(HeaderStyle.Render("MODULE PATH"))
+		s.WriteString("\n\n")
+		s.WriteString("Define the Go module name.\n")
+		s.WriteString(DescStyle.Render("Usually github.com/user/project"))
+		s.WriteString("\n\n")
+		s.WriteString(m.TextInputComponent.View())
 
-	case StateSelectProjectScale:
-		viewString += TitleStyle.Render("Choose the project scale:") + "\n\n"
-		options := []struct {
-			label, desc string
-			disabled    bool
-		}{
-			{"Small", "Flat structure, minimal boilerplate", false},
-			{"Medium", "Layered architecture, Docker ready", true},
-			{"Enterprise", "Clean architecture, K8s ready", true},
-		}
-		for index, opt := range options {
-			if opt.disabled {
-				viewString += fmt.Sprintf("    %s - %s %s\n", opt.label, opt.desc, "(Coming Soon)")
-			} else {
-				cursor := " "
-				if uiModel.SelectedOption == index {
-					cursor = "›"
-				}
-				viewString += fmt.Sprintf("  %s %s - %s\n", cursor, opt.label, opt.desc)
-			}
-		}
-
-	case StateSelectTemplate:
-		viewString += TitleStyle.Render(fmt.Sprintf("Choose %s Template:", uiModel.ProjectScale)) + "\n\n"
-
+	// --- SELECTION (SINGLE) ---
+	case StateSelectProjectScale, StateSelectTemplate, StateSelectFramework, StateSelectDatabaseDriver:
+		var title, subtitle string
 		var options []string
-		if provider, err := generators.GetProvider(uiModel.ProjectScale); err == nil {
-			options = provider.GetTemplates()
-		}
 
-		for index, label := range options {
-			cursor := " "
-			txt := label
-			if uiModel.SelectedOption == index {
-				cursor = lipgloss.NewStyle().Foreground(ColorAccent).Render("›")
-				txt = lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render(label)
+		// Setup Context based on state
+		provider, _ := generators.GetProvider(m.ProjectScale)
+		switch m.CurrentState {
+		case StateSelectProjectScale:
+			title = "ARCHITECTURE SCALE"
+			subtitle = "How big is this project going to be?"
+			options = []string{"Small (Monolith/Script)", "Medium (Standard Service)", "Enterprise (Clean Arch/Microservice)"}
+		case StateSelectTemplate:
+			title = "TEMPLATE VARIATION"
+			subtitle = fmt.Sprintf("Available templates for %s scale:", m.ProjectScale)
+			if provider != nil {
+				options = provider.GetTemplates()
 			}
-			viewString += fmt.Sprintf("  %s %s\n", cursor, txt)
-		}
-
-	case StateSelectFramework:
-		viewString += TitleStyle.Render("Select Web Framework:") + "\n\n"
-
-		var options []string
-		if provider, err := generators.GetProvider(uiModel.ProjectScale); err == nil {
-			options = provider.GetFrameworks(uiModel.SelectedTemplate)
-		}
-
-		for index, label := range options {
-			cursor := " "
-			txt := label
-			if uiModel.SelectedOption == index {
-				cursor = lipgloss.NewStyle().Foreground(ColorAccent).Render("›")
-				txt = lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render(label)
+		case StateSelectFramework:
+			title = "HTTP FRAMEWORK"
+			subtitle = "Select the backbone of your REST API:"
+			if provider != nil {
+				options = provider.GetFrameworks(m.SelectedTemplate)
 			}
-			viewString += fmt.Sprintf("  %s %s\n", cursor, txt)
-		}
-
-	case StateSelectDatabaseDriver:
-		viewString += TitleStyle.Render("Select Persistence (Database):") + "\n\n"
-
-		var options []string
-		if provider, err := generators.GetProvider(uiModel.ProjectScale); err == nil {
-			options = provider.GetDatabaseDrivers(uiModel.SelectedTemplate)
-		}
-
-		for index, label := range options {
-			cursor := " "
-			txt := label
-			if uiModel.SelectedOption == index {
-				cursor = lipgloss.NewStyle().Foreground(ColorAccent).Render("›")
-				txt = lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render(label)
+		case StateSelectDatabaseDriver:
+			title = "DATA PERSISTENCE"
+			subtitle = "Select your primary database driver:"
+			if provider != nil {
+				options = provider.GetDatabaseDrivers(m.SelectedTemplate)
 			}
-			viewString += fmt.Sprintf("  %s %s\n", cursor, txt)
 		}
 
+		s.WriteString(HeaderStyle.Render(title))
+		s.WriteString("\n\n")
+		s.WriteString(subtitle + "\n\n")
+
+		// Render List
+		for i, opt := range options {
+			cursor := " "
+			box := "( )"
+			style := lipgloss.NewStyle().Foreground(ColorBlur)
+
+			if m.SelectedOption == i {
+				cursor = "›"
+				box = "(•)"
+				style = lipgloss.NewStyle().Foreground(ColorFocus).Bold(true)
+			}
+
+			// Format: › (•) Option Label
+			s.WriteString(style.Render(fmt.Sprintf("%s %s %s", cursor, box, opt)) + "\n")
+		}
+
+		s.WriteString("\n" + DescStyle.Render("Use Arrow Keys to move • Enter to select"))
+
+	// --- MULTI SELECT (ADDONS) ---
 	case StateSelectAddons:
-		var sb strings.Builder
+		s.WriteString(HeaderStyle.Render("SYSTEM MODULES"))
+		s.WriteString("\n\n")
+		s.WriteString("Select additional components to install:\n\n")
 
-		// Header
-		sb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#FF4DC4")).Bold(true).Render("Select Additional Features") + "\n")
-		sb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#5C5C5C")).Italic(true).Render("Press <SPACE> to toggle, <ENTER> to confirm") + "\n\n")
+		for i, addon := range core.AvailableAddons {
+			cursor := " "
+			box := "[ ]"
+			style := lipgloss.NewStyle().Foreground(ColorBlur)
 
-		// Loop Options dari Core
-		for index, addon := range core.AvailableAddons {
-			cursor := "  "
-			checkbox := "[ ]"
+			// Logic Highlight & Checked
+			isHighlighted := m.SelectedOption == i
+			isChecked := m.SelectedAddonsIndices[i]
 
-			// Style Default (Item tidak aktif/tidak terpilih)
-			itemStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#666666"))
-			cursorStyle := lipgloss.NewStyle()
-			checkStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#666666"))
-
-			// 1. Logika Kursor (Posisi yang sedang disorot)
-			if uiModel.SelectedOption == index {
-				cursor = "› "
-				cursorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF4DC4")).Bold(true)
-				itemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true)
-				checkStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF"))
+			if isChecked {
+				box = "[x]"
+				style = lipgloss.NewStyle().Foreground(ColorSuccess)
 			}
 
-			// 2. Logika Checkbox (Apakah item sudah dicentang?)
-			if uiModel.SelectedAddonsIndices[index] {
-				checkbox = "[✔]"
-				checkStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00FF00")).Bold(true)
+			if isHighlighted {
+				cursor = "›"
 
-				if uiModel.SelectedOption != index {
-					itemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#DDDDDD"))
+				style = style.Bold(true).Foreground(ColorText)
+				if isChecked {
+					style = style.Foreground(ColorSuccess).Bold(true)
 				}
 			}
 
-			row := fmt.Sprintf("%s%s %s\n",
-				cursorStyle.Render(cursor),
-				checkStyle.Render(checkbox),
-				itemStyle.Render(addon.Label),
-			)
-
-			sb.WriteString(row)
+			s.WriteString(style.Render(fmt.Sprintf("%s %s %s", cursor, box, addon.Label)) + "\n")
 		}
+		s.WriteString("\n" + DescStyle.Render("Space: Toggle • Enter: Confirm"))
 
-		viewString += sb.String()
-
+	// --- INSTALLING ---
 	case StateInstalling:
-		viewString += "\n" + TitleStyle.Render("🚀 Initiating Launch Sequence...") + "\n\n"
-		viewString += fmt.Sprintf(" %s %s\n\n", uiModel.Spinner.View(), uiModel.InstallMsg)
-		viewString += " " + uiModel.Progress.View() + "\n\n"
+		s.WriteString(HeaderStyle.Render("FABRICATING"))
+		s.WriteString("\n\n")
+		s.WriteString(fmt.Sprintf("%s %s\n\n", m.Spinner.View(), m.InstallMsg))
 
+		// Progress Bar container
+		s.WriteString(m.Progress.View())
+
+	// --- DONE ---
 	case StateGenerationDone:
-		viewString += "\n" + lipgloss.NewStyle().Foreground(ColorGold).Bold(true).Render("✨ Project successfully forged!") + "\n"
-		viewString += fmt.Sprintf("\n   cd %s\n   go run .\n\n", uiModel.ProjectName)
-		viewString += HintStyle.Render("Press Enter to exit.")
+		s.WriteString(lipgloss.NewStyle().Foreground(ColorSuccess).Bold(true).Render("✔ DEPLOYMENT SUCCESSFUL"))
+		s.WriteString("\n\n")
+
+		// Kotak info perintah selanjutnya
+		cmdBox := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(ColorBlur).
+			Padding(1, 2).
+			Render(fmt.Sprintf("cd %s\nmake run", m.ProjectName))
+
+		s.WriteString("Get started with:\n" + cmdBox)
+		s.WriteString("\n\n" + DescStyle.Render("Press Enter to close."))
 	}
 
-	return viewString
+	return MainContentStyle.Render(s.String())
+}
+
+func renderError(err error) string {
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FF0000")).
+		Bold(true).
+		Render(fmt.Sprintf("\n  ❌ CRITICAL FAILURE: %v\n", err))
 }
