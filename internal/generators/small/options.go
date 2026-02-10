@@ -4,27 +4,27 @@ package small
 // GetTemplates returns available templates for Small scale
 func GetTemplates() []string {
 	return []string{
-		"simple-api",
-		"fast-http",
-		"cli-tool",
-		"telegram-bot-starter",
+		"Simple API",
+		"Fast HTTP",
+		"CLI Tool",
+		"Telegram Bot Starter",
 	}
 }
 
 // GetFrameworks returns available frameworks based on the selected template
 func GetFrameworks(template string) []string {
 	switch template {
-	case "fast-http":
+	case "Fast HTTP":
 		return []string{
 			"Fiber",
 			"Gin",
 		}
 
-	case "simple-api":
+	case "Simple API":
 		return []string{}
-	case "cli-tool":
+	case "CLI Tool":
 		return []string{}
-	case "bot-starter":
+	case "Telegram Bot Starter":
 		return []string{}
 	default:
 		return []string{}
@@ -33,7 +33,7 @@ func GetFrameworks(template string) []string {
 
 // GetDatabaseDrivers returns available database options
 func GetDatabaseDrivers(template string) []string {
-	if template == "cli-tool" || template == "telegram-bot-starter" {
+	if template == "CLI Tool" || template == "Telegram Bot Starter" {
 		return []string{
 			"None",
 		}

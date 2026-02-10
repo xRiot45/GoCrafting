@@ -2,6 +2,7 @@ package small
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/xRiot45/gocrafting/internal/core"
 	common "github.com/xRiot45/gocrafting/internal/generators/common"
@@ -16,20 +17,18 @@ import (
 //
 // Returns an error if there is an issue during the generation process.
 func Generate(config core.ProjectConfig) error {
-	// 1. Base Structure (Folder, JSON, Template Files)
-	// (Pastikan path templateSourcePath benar sesuai folder Anda)
-	templatePath := "small/" + config.SelectedTemplate
+	normalizedName := strings.ToLower(config.SelectedTemplate)
+	normalizedName = strings.ReplaceAll(normalizedName, " ", "-")
+
+	templatePath := fmt.Sprintf("small/%s", normalizedName)
 	if err := common.BaseGenerate(config, templatePath); err != nil {
 		return err
 	}
 
-	// 2. Install Dependencies
 	if err := installDependencies(config); err != nil {
 		return fmt.Errorf("failed to install dependencies: %w", err)
 	}
 
-	// 3. [BARU] GENERATE ADDONS (.env, dll)
-	// Panggil fungsi global yang baru kita buat
 	if err := common.GenerateAddons(config); err != nil {
 		return fmt.Errorf("failed to generate addons: %w", err)
 	}
@@ -57,13 +56,13 @@ func installDependencies(config core.ProjectConfig) error {
 		packages = append(packages, core.GetPackages(config.SelectedFramework)...)
 	} else {
 		switch config.SelectedTemplate {
-		case "cli-tool":
+		case "CLI Tool":
 			packages = append(packages, core.GetPackages("Cobra")...)
 
-		case "bot-starter":
+		case "Telegram Bot Starter":
 			packages = append(packages, core.GetPackages("TelegramBot")...)
 
-		case "simple-api":
+		case "Simple API":
 			// No additional packages for simple-api without framework
 		}
 	}
