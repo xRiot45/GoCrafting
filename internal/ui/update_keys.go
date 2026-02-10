@@ -2,6 +2,7 @@ package ui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/xRiot45/gocrafting/internal/core"
 	"github.com/xRiot45/gocrafting/internal/generators"
 )
 
@@ -53,7 +54,7 @@ func (m MainModel) handleNavigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 
 		case StateSelectAddons:
-			maxIndex = len(AddonList) - 1
+			maxIndex = len(core.AvailableAddons) - 1
 		}
 
 		if m.SelectedOption < maxIndex {

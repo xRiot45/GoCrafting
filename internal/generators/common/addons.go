@@ -1,3 +1,4 @@
+// Package common contains functions to generate common add-ons for Go projects.
 package common
 
 import (
@@ -17,11 +18,11 @@ func GenerateAddons(config core.ProjectConfig) error {
 
 	if config.HasAddon("Environment File (.env)") {
 		envFiles := map[string]string{
-			"shared/env/env_development.tmpl": ".env.development", // Dev config
-			"shared/env/env_example.tmpl":     ".env.example",     // Master Documentation
-			"shared/env/env_production.tmpl":  ".env.production",  // Prod config
-			"shared/env/env_staging.tmpl":     ".env.staging",     // Staging config
-			"shared/env/env_test.tmpl":        ".env.test",        // CI/CD config
+			"common/env/env_development.tmpl": ".env.development", // Dev config
+			"common/env/env_example.tmpl":     ".env.example",     // Master Documentation
+			"common/env/env_production.tmpl":  ".env.production",  // Prod config
+			"common/env/env_staging.tmpl":     ".env.staging",     // Staging config
+			"common/env/env_test.tmpl":        ".env.test",        // CI/CD config
 		}
 
 		for tpl, output := range envFiles {
@@ -33,22 +34,22 @@ func GenerateAddons(config core.ProjectConfig) error {
 	}
 
 	if config.HasAddon("Gitignore File") {
-		if err := renderAndWrite(config, "shared/gitignore.tmpl", ".gitignore"); err != nil {
+		if err := renderAndWrite(config, "common/gitignore.tmpl", ".gitignore"); err != nil {
 			return fmt.Errorf("failed to create .gitignore: %w", err)
 		}
 	}
 
 	if config.HasAddon("Readme File") {
-		if err := renderAndWrite(config, "shared/readme.tmpl", "README.md"); err != nil {
+		if err := renderAndWrite(config, "common/readme.tmpl", "README.md"); err != nil {
 			return fmt.Errorf("failed to create README.md: %w", err)
 		}
 	}
 
 	if config.HasAddon("Dockerfile") {
 		dockerFiles := map[string]string{
-			"shared/docker/Dockerfile.tmpl":     "Dockerfile",
-			"shared/docker/.dockerignore.tmpl":  ".dockerignore",
-			"shared/docker/docker-compose.tmpl": "docker-compose.yaml",
+			"common/docker/Dockerfile.tmpl":     "Dockerfile",
+			"common/docker/.dockerignore.tmpl":  ".dockerignore",
+			"common/docker/docker-compose.tmpl": "docker-compose.yaml",
 		}
 
 		for tpl, output := range dockerFiles {
@@ -66,10 +67,10 @@ func GenerateAddons(config core.ProjectConfig) error {
 
 		// 2. Map Template -> Output
 		ciFiles := map[string]string{
-			"shared/github/ci.tmpl":         ".github/workflows/ci.yaml",
-			"shared/github/release.tmpl":    ".github/workflows/release.yaml",
-			"shared/github/dependabot.tmpl": ".github/dependabot.yaml",
-			"shared/github/goreleaser.tmpl": ".goreleaser.yaml",
+			"common/github/ci.tmpl":         ".github/workflows/ci.yaml",
+			"common/github/release.tmpl":    ".github/workflows/release.yaml",
+			"common/github/dependabot.tmpl": ".github/dependabot.yaml",
+			"common/github/goreleaser.tmpl": ".goreleaser.yaml",
 		}
 
 		for tpl, output := range ciFiles {
@@ -80,19 +81,19 @@ func GenerateAddons(config core.ProjectConfig) error {
 	}
 
 	if config.HasAddon("Editor Config File") {
-		if err := renderAndWrite(config, "shared/editorconfig.tmpl", ".editorconfig"); err != nil {
+		if err := renderAndWrite(config, "common/editorconfig.tmpl", ".editorconfig"); err != nil {
 			return fmt.Errorf("failed to create .editorconfig: %w", err)
 		}
 	}
 
 	if config.HasAddon("Makefile (Shortcut Commands)") {
-		if err := renderAndWrite(config, "shared/makefile.tmpl", "Makefile"); err != nil {
+		if err := renderAndWrite(config, "common/makefile.tmpl", "Makefile"); err != nil {
 			return fmt.Errorf("failed to create Makefile: %w", err)
 		}
 	}
 
 	if config.HasAddon("Lefthook (Commit Linter)") {
-		if err := renderAndWrite(config, "shared/lefthook.tmpl", "lefthook.yaml"); err != nil {
+		if err := renderAndWrite(config, "common/lefthook.tmpl", "lefthook.yaml"); err != nil {
 			return fmt.Errorf("failed to create lefthook.yaml: %w", err)
 		}
 

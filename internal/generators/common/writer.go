@@ -1,4 +1,3 @@
-// Package common provides shared logic for generating projects across all scales.
 package common
 
 import (

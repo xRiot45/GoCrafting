@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/xRiot45/gocrafting/internal/core"
 	"github.com/xRiot45/gocrafting/internal/generators"
 )
 
@@ -148,28 +149,45 @@ func (uiModel MainModel) View() string {
 	case StateSelectAddons:
 		var sb strings.Builder
 
+		// Header
 		sb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#FF4DC4")).Bold(true).Render("Select Additional Features") + "\n")
 		sb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#5C5C5C")).Italic(true).Render("Press <SPACE> to toggle, <ENTER> to confirm") + "\n\n")
 
-		for index, label := range AddonList {
-			cursor := " "
+		// Loop Options dari Core
+		for index, addon := range core.AvailableAddons {
+			cursor := "  "
 			checkbox := "[ ]"
-			itemStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#AAAAAA"))
 
+			// Style Default (Item tidak aktif/tidak terpilih)
+			itemStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#666666"))
+			cursorStyle := lipgloss.NewStyle()
+			checkStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#666666"))
+
+			// 1. Logika Kursor (Posisi yang sedang disorot)
 			if uiModel.SelectedOption == index {
 				cursor = "› "
-				itemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FAFAFA")).Bold(true)
+				cursorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF4DC4")).Bold(true)
+				itemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true)
+				checkStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF"))
 			}
 
+			// 2. Logika Checkbox (Apakah item sudah dicentang?)
 			if uiModel.SelectedAddonsIndices[index] {
 				checkbox = "[✔]"
+				checkStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00FF00")).Bold(true)
+
 				if uiModel.SelectedOption != index {
-					itemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00FF00"))
+					itemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#DDDDDD"))
 				}
 			}
 
-			sb.WriteString(fmt.Sprintf("%s%s %s\n", cursor, checkbox, itemStyle.Render(label)))
+			row := fmt.Sprintf("%s%s %s\n",
+				cursorStyle.Render(cursor),
+				checkStyle.Render(checkbox),
+				itemStyle.Render(addon.Label),
+			)
 
+			sb.WriteString(row)
 		}
 
 		viewString += sb.String()

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/xRiot45/gocrafting/internal/core"
-	common "github.com/xRiot45/gocrafting/internal/generators/shared"
+	common "github.com/xRiot45/gocrafting/internal/generators/common"
 	"github.com/xRiot45/gocrafting/internal/shell"
 )
 

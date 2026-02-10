@@ -19,7 +19,6 @@ func (uiModel MainModel) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	case FilesCreatedMsg:
 		uiModel.InstallMsg = "Downloading dependencies..."
 		cmds = append(cmds, uiModel.Progress.SetPercent(0.3))
-		// Reconstruct config ada di helpers.go
 		config := uiModel.reconstructConfig()
 		cmds = append(cmds, installDepsCmd(uiModel.ProjectName, config))
 
