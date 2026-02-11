@@ -32,6 +32,8 @@ func (m MainModel) handleNavigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// --- NAVIGASI BAWAH ---
 	case tea.KeyDown:
 		var maxIndex int
+		var nextItemName string
+
 		provider, _ := generators.GetProvider(m.ProjectScale)
 
 		switch m.CurrentState {
@@ -40,7 +42,12 @@ func (m MainModel) handleNavigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 		case StateSelectTemplate:
 			if provider != nil {
-				maxIndex = len(provider.GetTemplates()) - 1
+				templates := provider.GetTemplates()
+				maxIndex = len(templates) - 1
+
+				if m.SelectedOption < maxIndex {
+					nextItemName = templates[m.SelectedOption+1]
+				}
 			}
 
 		case StateSelectFramework:
@@ -58,6 +65,10 @@ func (m MainModel) handleNavigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 		if m.SelectedOption < maxIndex {
+			if m.CurrentState == StateSelectTemplate && isDisabledTemplate(nextItemName) {
+				return m, nil
+			}
+
 			m.SelectedOption++
 		}
 		return m, nil

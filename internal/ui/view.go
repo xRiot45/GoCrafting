@@ -19,17 +19,11 @@ func (m MainModel) View() string {
 		return "\n  👋 Aborting process.\n"
 	}
 
-	// 1. Render Sidebar (Progress Tracker)
 	sidebar := renderSidebar(m)
-
-	// 2. Render Main Window (Active Step)
 	mainContent := renderMainContent(m)
 
-	// 3. Gabungkan Keduanya (Layout Horizontal)
-	// Output: [ Sidebar | Main Content ]
 	ui := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, mainContent)
 
-	// Tambahkan margin luar agar tidak nempel pinggir terminal
 	return lipgloss.NewStyle().Margin(1, 2).Render(ui)
 }
 
@@ -37,10 +31,8 @@ func (m MainModel) View() string {
 func renderSidebar(m MainModel) string {
 	var s strings.Builder
 
-	// Logo Kecil di atas Sidebar
 	s.WriteString(lipgloss.NewStyle().Foreground(ColorFocus).Bold(true).Render("GO CRAFTING") + "\n\n")
 
-	// Daftar Step
 	steps := []struct {
 		state SessionState
 		label string
@@ -59,17 +51,14 @@ func renderSidebar(m MainModel) string {
 		var indicator, label string
 
 		if m.CurrentState == step.state {
-			// Step Aktif
 			indicator = "●"
 			label = StepActiveStyle.Render(step.label)
 			indicator = StepActiveStyle.Render(indicator)
 		} else if m.CurrentState > step.state {
-			// Step Selesai
 			indicator = "✔"
 			label = StepDoneStyle.Render(step.label)
 			indicator = StepDoneStyle.Render(indicator)
 		} else {
-			// Step Belum
 			indicator = "○"
 			label = StepPendingStyle.Render(step.label)
 			indicator = StepPendingStyle.Render(indicator)
@@ -144,16 +133,27 @@ func renderMainContent(m MainModel) string {
 		for i, opt := range options {
 			cursor := " "
 			box := "( )"
-			style := lipgloss.NewStyle().Foreground(ColorBlur)
 
-			if m.SelectedOption == i {
-				cursor = "›"
-				box = "(•)"
-				style = lipgloss.NewStyle().Foreground(ColorFocus).Bold(true)
+			style := lipgloss.NewStyle().Foreground(ColorBlur)
+			label := opt
+
+			if m.CurrentState == StateSelectTemplate && isDisabledTemplate(opt) {
+
+				orangeColor := lipgloss.Color("#FF8800")
+
+				style = lipgloss.NewStyle().Foreground(orangeColor).Italic(true)
+
+				label = fmt.Sprintf("%s (Coming Soon)", opt)
+				box = "🔒 "
+			} else {
+				if m.SelectedOption == i {
+					cursor = "➜"
+					box = "(•)"
+					style = lipgloss.NewStyle().Foreground(ColorFocus).Bold(true)
+				}
 			}
 
-			// Format: › (•) Option Label
-			s.WriteString(style.Render(fmt.Sprintf("%s %s %s", cursor, box, opt)) + "\n")
+			s.WriteString(style.Render(fmt.Sprintf("%s %s %s", cursor, box, label)) + "\n")
 		}
 
 		s.WriteString("\n" + DescStyle.Render("Use Arrow Keys to move • Enter to select"))

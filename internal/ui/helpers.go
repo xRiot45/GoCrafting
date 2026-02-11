@@ -24,3 +24,14 @@ func (uiModel MainModel) reconstructConfig() core.ProjectConfig {
 		SelectedAddons:         selectedAddons,
 	}
 }
+
+// isDisabledTemplate mengecek apakah templateName sedang disabled.
+func isDisabledTemplate(templateName string) bool {
+	disabledTemplates := map[string]bool{
+		// Small Project
+		"CLI Tool":             true,
+		"Telegram Bot Starter": true,
+	}
+
+	return disabledTemplates[templateName]
+}
