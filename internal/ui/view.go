@@ -1,4 +1,3 @@
-// Package ui contains the terminal UI views and rendering logic.
 package ui
 
 import (
@@ -12,27 +11,35 @@ import (
 
 // View renders the entire UI based on the current state of the MainModel.
 func (m MainModel) View() string {
+	// 1. Error Handling
 	if m.Err != nil {
 		return renderError(m.Err)
 	}
+
+	// 2. Quit Handling
 	if m.IsQuitting {
 		return "\n  👋 Aborting process.\n"
 	}
 
+	// 3. Render Components
 	sidebar := renderSidebar(m)
 	mainContent := renderMainContent(m)
 
+	// 4. Layout Assembly (Horizontal Split)
 	ui := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, mainContent)
 
+	// 5. Final Rendering with Margin
 	return lipgloss.NewStyle().Margin(1, 2).Render(ui)
 }
 
-// --- SIDEBAR COMPONENT ---
+// --- SIDEBAR COMPONENT (Progress Tracker) ---
 func renderSidebar(m MainModel) string {
 	var s strings.Builder
 
+	// Logo Header
 	s.WriteString(lipgloss.NewStyle().Foreground(ColorFocus).Bold(true).Render("GO CRAFTING") + "\n\n")
 
+	// Steps Definition
 	steps := []struct {
 		state SessionState
 		label string
@@ -47,18 +54,22 @@ func renderSidebar(m MainModel) string {
 		{StateInstalling, "Installation"},
 	}
 
+	// Loop to render steps with status indicators
 	for _, step := range steps {
 		var indicator, label string
 
 		if m.CurrentState == step.state {
+			// Current Step (Active)
 			indicator = "●"
 			label = StepActiveStyle.Render(step.label)
 			indicator = StepActiveStyle.Render(indicator)
 		} else if m.CurrentState > step.state {
+			// Completed Step
 			indicator = "✔"
 			label = StepDoneStyle.Render(step.label)
 			indicator = StepDoneStyle.Render(indicator)
 		} else {
+			// Pending Step
 			indicator = "○"
 			label = StepPendingStyle.Render(step.label)
 			indicator = StepPendingStyle.Render(indicator)
@@ -70,7 +81,7 @@ func renderSidebar(m MainModel) string {
 	return SidebarStyle.Render(s.String())
 }
 
-// --- MAIN CONTENT COMPONENT ---
+// --- MAIN CONTENT COMPONENT (Interactive Area) ---
 func renderMainContent(m MainModel) string {
 	var s strings.Builder
 
@@ -93,7 +104,7 @@ func renderMainContent(m MainModel) string {
 		s.WriteString("\n\n")
 		s.WriteString(m.TextInputComponent.View())
 
-	// --- SELECTION (SINGLE) ---
+	// --- SINGLE SELECTIONS (Scale, Template, Framework, DB) ---
 	case StateSelectProjectScale, StateSelectTemplate, StateSelectFramework, StateSelectDatabaseDriver:
 		var title, subtitle string
 		var options []string
@@ -104,7 +115,7 @@ func renderMainContent(m MainModel) string {
 		case StateSelectProjectScale:
 			title = "ARCHITECTURE SCALE"
 			subtitle = "How big is this project going to be?"
-			options = []string{"Small (Monolith/Script)", "Medium (Standard Service)", "Enterprise (Clean Arch/Microservice)"}
+			options = []string{"Small", "Medium", "Enterprise"}
 		case StateSelectTemplate:
 			title = "TEMPLATE VARIATION"
 			subtitle = fmt.Sprintf("Available templates for %s scale:", m.ProjectScale)
@@ -129,23 +140,32 @@ func renderMainContent(m MainModel) string {
 		s.WriteString("\n\n")
 		s.WriteString(subtitle + "\n\n")
 
-		// Render List
+		// Render List Options
 		for i, opt := range options {
 			cursor := " "
 			box := "( )"
 
+			// Default Style
 			style := lipgloss.NewStyle().Foreground(ColorBlur)
 			label := opt
 
-			if m.CurrentState == StateSelectTemplate && isDisabledTemplate(opt) {
+			// LOGIC: Check for Disabled Items (Orange + Lock)
+			// Applies to Project Scale and Templates
+			isDisabled := false
+			if m.CurrentState == StateSelectProjectScale && isDisabledProjectScale(opt) {
+				isDisabled = true
+			} else if m.CurrentState == StateSelectTemplate && isDisabledTemplate(opt) {
+				isDisabled = true
+			}
 
+			if isDisabled {
+				// Style for Disabled/Coming Soon
 				orangeColor := lipgloss.Color("#FF8800")
-
 				style = lipgloss.NewStyle().Foreground(orangeColor).Italic(true)
-
 				label = fmt.Sprintf("%s (Coming Soon)", opt)
 				box = "🔒 "
 			} else {
+				// Style for Active/Normal Items
 				if m.SelectedOption == i {
 					cursor = "➜"
 					box = "(•)"
@@ -153,6 +173,7 @@ func renderMainContent(m MainModel) string {
 				}
 			}
 
+			// Render Row: [Cursor] [Box] [Label]
 			s.WriteString(style.Render(fmt.Sprintf("%s %s %s", cursor, box, label)) + "\n")
 		}
 
@@ -180,7 +201,7 @@ func renderMainContent(m MainModel) string {
 
 			if isHighlighted {
 				cursor = "›"
-
+				// Highlight overrides color
 				style = style.Bold(true).Foreground(ColorText)
 				if isChecked {
 					style = style.Foreground(ColorSuccess).Bold(true)
@@ -205,7 +226,7 @@ func renderMainContent(m MainModel) string {
 		s.WriteString(lipgloss.NewStyle().Foreground(ColorSuccess).Bold(true).Render("✔ DEPLOYMENT SUCCESSFUL"))
 		s.WriteString("\n\n")
 
-		// Kotak info perintah selanjutnya
+		// Success Command Box
 		cmdBox := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(ColorBlur).
@@ -219,6 +240,7 @@ func renderMainContent(m MainModel) string {
 	return MainContentStyle.Render(s.String())
 }
 
+// --- HELPER: ERROR RENDERING ---
 func renderError(err error) string {
 	return lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#FF0000")).

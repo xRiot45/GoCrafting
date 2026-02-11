@@ -35,3 +35,13 @@ func isDisabledTemplate(templateName string) bool {
 
 	return disabledTemplates[templateName]
 }
+
+// isDisabledProjectScale mengecek apakah scaleName sedang disabled.
+func isDisabledProjectScale(scale string) bool {
+	disabledScales := map[string]bool{
+		"Medium":     true,
+		"Enterprise": true,
+	}
+
+	return disabledScales[scale]
+}

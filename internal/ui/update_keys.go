@@ -32,13 +32,23 @@ func (m MainModel) handleNavigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// --- NAVIGASI BAWAH ---
 	case tea.KeyDown:
 		var maxIndex int
-		var nextItemName string
+
+		scales := []string{"Small", "Medium", "Enterprise"}
 
 		provider, _ := generators.GetProvider(m.ProjectScale)
 
 		switch m.CurrentState {
+
 		case StateSelectProjectScale:
-			maxIndex = 2
+			maxIndex = len(scales) - 1
+
+			if m.SelectedOption < maxIndex {
+				nextScale := scales[m.SelectedOption+1]
+
+				if isDisabledProjectScale(nextScale) {
+					return m, nil
+				}
+			}
 
 		case StateSelectTemplate:
 			if provider != nil {
@@ -46,7 +56,9 @@ func (m MainModel) handleNavigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				maxIndex = len(templates) - 1
 
 				if m.SelectedOption < maxIndex {
-					nextItemName = templates[m.SelectedOption+1]
+					if isDisabledTemplate(templates[m.SelectedOption+1]) {
+						return m, nil
+					}
 				}
 			}
 
@@ -64,11 +76,8 @@ func (m MainModel) handleNavigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			maxIndex = len(core.AvailableAddons) - 1
 		}
 
+		// Eksekusi Gerakan (Hanya jika lolos pengecekan di atas)
 		if m.SelectedOption < maxIndex {
-			if m.CurrentState == StateSelectTemplate && isDisabledTemplate(nextItemName) {
-				return m, nil
-			}
-
 			m.SelectedOption++
 		}
 		return m, nil
