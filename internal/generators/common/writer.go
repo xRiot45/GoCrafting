@@ -2,7 +2,6 @@ package common
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
@@ -88,47 +87,30 @@ func forgeFile(fileSystem fs.FS, sourcePath, targetPath string, config core.Proj
 // createMetaFile creates the project metadata file using struct from core.
 func createMetaFile(config core.ProjectConfig) error {
 
-	// 1. LOGIC PENENTUAN FRAMEWORK NAME
-	// Jika config.SelectedFramework kosong (karena UI skip), kita ubah jadi "None"
-	frameworkName := config.SelectedFramework
-	if frameworkName == "" {
-		frameworkName = "None"
-
-		// OPSI ALTERNATIF (Lebih Deskriptif):
-		// Jika Anda ingin simple-api tertulis "Net/HTTP" alih-alih "None", gunakan switch ini:
-		/*
-			switch config.SelectedTemplate {
-			case "simple-api":
-				frameworkName = "Net/HTTP"
-			case "cli-tool":
-				frameworkName = "Cobra"
-			default:
-				frameworkName = "None"
-			}
-		*/
-	}
+	// frameworkName := config.SelectedFramework
+	// if frameworkName == "" {
+	// 	frameworkName = "None"
+	// }
 
 	// 2. ISI STRUCT META
-	meta := core.ProjectMeta{
-		CLIVersion:     core.Version,
-		Name:           config.ProjectName,
-		Module:         config.ModuleName,
-		Scale:          config.ProjectScale,
-		Template:       config.SelectedTemplate,
-		Framework:      frameworkName,
-		DatabaseDriver: config.SelectedDatabaseDriver,
-		Addons:         config.SelectedAddons,
-		CreatedAt:      time.Now().Format(time.RFC3339),
+	meta := core.ProjectMetadata{
+		CLIVersion:             "v1.0.0",
+		ProjectName:            config.ProjectName,
+		ModuleName:             config.ModuleName,
+		ProjectScale:           config.ProjectScale,
+		SelectedTemplate:       config.SelectedTemplate,
+		SelectedFramework:      config.SelectedFramework,
+		SelectedDatabaseDriver: config.SelectedDatabaseDriver,
+		SelectedAddons:         config.SelectedAddons,
+		CreatedAt:              time.Now(),
 	}
 
 	// 3. WRITE FILE
-	fileContent, err := json.MarshalIndent(meta, "", "  ")
-	if err != nil {
-		return err
+	if err := core.SaveMetadata(config.ProjectName, meta); err != nil {
+		return fmt.Errorf("failed to save metadata: %w", err)
 	}
 
-	targetPath := filepath.Join(config.ProjectName, "gocrafting-cli.json")
-	return os.WriteFile(targetPath, fileContent, 0600)
+	return nil
 }
 
 // processTemplate processes the raw template data using the Go text/template engine.

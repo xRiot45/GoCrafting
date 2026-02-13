@@ -75,9 +75,8 @@ type MainModel struct {
 	InstallMsg         string
 }
 
-// New initializes and returns a new MainModel with default components.
-// (Ini pengganti fungsi InitialModel Anda sebelumnya, tapi lebih lengkap)
-func New() MainModel {
+// InitialModel initializes and returns a new MainModel with default components.
+func InitialModel() MainModel {
 	// 1. Setup Text Input (Sesuai settingan lama Anda)
 	ti := textinput.New()
 	ti.Placeholder = "my-awesome-project"

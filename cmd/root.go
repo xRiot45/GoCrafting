@@ -37,8 +37,6 @@ type schematicEntry struct {
 var rootCmd = &cobra.Command{
 	Use:   "gocrafting",
 	Short: "The Enterprise-Grade Go Architecture Generator",
-	// We override Run to display our custom help when the user types just 'gocrafting'
-	// The underscore (_) is used to ignore the unused 'args' parameter (linter fix).
 	Run: func(cmd *cobra.Command, _ []string) {
 		renderCustomHelp(cmd)
 	},
@@ -47,20 +45,14 @@ var rootCmd = &cobra.Command{
 // --- 4. INITIALIZATION ---
 
 func init() {
-	// Override default Cobra help function (when user types --help)
-	// The underscore (_) is used to ignore the unused 'strings' parameter (linter fix).
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, _ []string) {
 		renderCustomHelp(cmd)
 	})
 
-	// Disable default command completion to keep the menu clean
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
 
-// --- 5. EXECUTE (ENTRY POINT) ---
-
 // Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main().
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		handleError(err)
@@ -139,15 +131,11 @@ func renderCustomHelp(_ *cobra.Command) {
 func printSection(title string, entries []helpEntry) {
 	fmt.Println(colorCyan.Render("  " + title))
 
-	// Setup TabWriter: Output, minWidth, tabWidth, padding, padChar, flags
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 
 	for _, e := range entries {
-		// Format: Command   Description
-		// We explicitly ignore errors here to satisfy the linter (errcheck)
 		_, _ = fmt.Fprintf(w, "    %s\t%s\n", colorWhite.Render(e.Name), colorGray.Render(e.Desc))
 	}
-	// We explicitly ignore errors here to satisfy the linter (errcheck)
 	_ = w.Flush()
 	fmt.Println()
 }
@@ -159,25 +147,19 @@ func printSchematicsList() {
 	fmt.Println("    Usage: gocrafting generate <schematic> [name]")
 	fmt.Println()
 
-	// Internal helper to print per group
 	printGroup := func(groupTitle string, items []schematicEntry) {
-		// Group Title (Magenta)
 		fmt.Println(colorMagenta.Render("    " + groupTitle))
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 		for _, item := range items {
-			// Format Alias: [alias] dimmed color
 			aliasFmt := fmt.Sprintf("%s%s%s", colorDim.Render("["), item.Alias, colorDim.Render("]"))
-
-			// Format Row:      Command    [Alias]    Description
-			// We explicitly ignore errors here to satisfy the linter (errcheck)
 			_, _ = fmt.Fprintf(w, "      %s\t%s\t%s\n",
 				colorGreen.Render(item.Name),
 				aliasFmt,
 				colorGray.Render(item.Desc),
 			)
 		}
-		// We explicitly ignore errors here to satisfy the linter (errcheck)
+
 		_ = w.Flush()
 		fmt.Println()
 	}
