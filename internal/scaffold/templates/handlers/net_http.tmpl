@@ -1,0 +1,146 @@
+package {{.PackageName}}
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
+
+// {{.StructName}}Handler handles HTTP requests for {{.StructName}} resources.
+// It uses the standard library "net/http".
+type {{.StructName}}Handler struct {
+	// TODO: Inject your service interface here.
+	// service {{.StructName}}Service
+}
+
+// New{{.StructName}}Handler creates a new instance of {{.StructName}}Handler.
+func New{{.StructName}}Handler() *{{.StructName}}Handler {
+	return &{{.StructName}}Handler{}
+}
+
+// RegisterRoutes registers the API endpoints for this handler to the provided ServeMux.
+// It uses Go 1.22+ routing patterns (Method + Path + Wildcards).
+//
+// Usage in main.go:
+//   mux := http.NewServeMux()
+//   handler := handlers.New{{.StructName}}Handler()
+//   handler.RegisterRoutes(mux)
+func (h *{{.StructName}}Handler) RegisterRoutes(mux *http.ServeMux) {
+	// Grouping isn't built-in like Fiber/Gin, but we prefix manually.
+	// Pattern: [METHOD] /path
+	
+	basePath := "/{{.StructName}}"
+
+	mux.HandleFunc("POST " + basePath, h.Create)
+	mux.HandleFunc("GET " + basePath, h.FindAll)
+	mux.HandleFunc("GET " + basePath + "/{id}", h.FindOne)
+	mux.HandleFunc("PUT " + basePath + "/{id}", h.Update)
+	mux.HandleFunc("DELETE " + basePath + "/{id}", h.Delete)
+}
+
+// Create handles the creation of a new {{.StructName}}.
+// POST /{{.StructName}}
+func (h *{{.StructName}}Handler) Create(w http.ResponseWriter, r *http.Request) {
+	// 1. Define Request Struct
+	type CreateRequest struct {
+		Name string `json:"name"`
+		// Add validation tags or manual checks here
+	}
+
+	var req CreateRequest
+
+	// 2. Decode JSON Body
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	// 3. Call Service (TODO)
+	// result, err := h.service.Create(req)
+
+	// 4. Return Response
+	response := map[string]interface{}{
+		"message": "{{.StructName}} created successfully",
+		"data":    req,
+	}
+	h.writeJSON(w, http.StatusCreated, response)
+}
+
+// FindAll retrieves a list of {{.StructName}}.
+// GET /{{.StructName}}
+func (h *{{.StructName}}Handler) FindAll(w http.ResponseWriter, r *http.Request) {
+	// TODO: Fetch data from service
+	mockData := []map[string]interface{}{
+		{"id": "1", "name": "Sample {{.StructName}} 1"},
+		{"id": "2", "name": "Sample {{.StructName}} 2"},
+	}
+
+	h.writeJSON(w, http.StatusOK, map[string]interface{}{
+		"data": mockData,
+	})
+}
+
+// FindOne retrieves a single {{.StructName}} by ID.
+// GET /{{.StructName}}/{id}
+func (h *{{.StructName}}Handler) FindOne(w http.ResponseWriter, r *http.Request) {
+	// Get path value (Go 1.22+)
+	id := r.PathValue("id")
+
+	// TODO: Fetch single item by ID
+
+	h.writeJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "Detail of {{.StructName}}",
+		"id":      id,
+	})
+}
+
+// Update modifies an existing {{.StructName}}.
+// PUT /{{.StructName}}/{id}
+func (h *{{.StructName}}Handler) Update(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	var req map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	// TODO: Call service update logic
+
+	h.writeJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "{{.StructName}} updated successfully",
+		"id":      id,
+		"changes": req,
+	})
+}
+
+// Delete removes a {{.StructName}}.
+// DELETE /{{.StructName}}/{id}
+func (h *{{.StructName}}Handler) Delete(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	// TODO: Call service delete logic
+
+	h.writeJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "{{.StructName}} deleted successfully",
+		"id":      id,
+	})
+}
+
+// ---------------------------------------------------------------------
+// Helper Functions (Private)
+// ---------------------------------------------------------------------
+
+// writeJSON writes a JSON response with the given status code.
+func (h *{{.StructName}}Handler) writeJSON(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		fmt.Printf("Error encoding JSON: %v\n", err)
+	}
+}
+
+// writeError writes a structured JSON error response.
+func (h *{{.StructName}}Handler) writeError(w http.ResponseWriter, status int, message string) {
+	h.writeJSON(w, status, map[string]string{"error": message})
+}

@@ -1,0 +1,133 @@
+package {{.PackageName}}
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+// {{.StructName}}Handler serves as the interface for handling HTTP requests 
+// related to the {{.StructName}} resource.
+type {{.StructName}}Handler struct {
+	// TODO: Inject your Service Interface here.
+	// service {{.StructName}}Service
+}
+
+// New{{.StructName}}Handler instantiates and returns a new {{.StructName}}Handler.
+func New{{.StructName}}Handler() *{{.StructName}}Handler {
+	return &{{.StructName}}Handler{}
+}
+
+// RegisterRoutes sets up the API endpoints for this handler.
+// It groups routes under /{{.StructName}} to keep the main router clean.
+//
+// Usage in main.go:
+//   handler := handlers.New{{.StructName}}Handler()
+//   handler.RegisterRoutes(router)
+func (h *{{.StructName}}Handler) RegisterRoutes(router *gin.Engine) {
+	// Create a route group (e.g., /api/v1/users)
+	// You can customize the prefix path here.
+	group := router.Group("/{{.StructName}}")
+
+	group.POST("/", h.Create)
+	group.GET("/", h.FindAll)
+	group.GET("/:id", h.FindOne)
+	group.PUT("/:id", h.Update)
+	group.DELETE("/:id", h.Delete)
+}
+
+// Create handles the creation of a new {{.StructName}}.
+// POST /{{.StructName}}
+func (h *{{.StructName}}Handler) Create(c *gin.Context) {
+	// 1. Define a request structure for binding
+	// Ideally, move this struct to a DTO (Data Transfer Object) file.
+	type CreateRequest struct {
+		Name string `json:"name" binding:"required"`
+		// Add other fields here
+	}
+
+	var req CreateRequest
+
+	// 2. Bind and Validate JSON
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request body",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// 3. Call Service Layer (TODO)
+	// result, err := h.service.Create(req)
+
+	// 4. Return Success Response
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "{{.StructName}} created successfully",
+		"data":    req,
+	})
+}
+
+// FindAll retrieves a list of {{.StructName}} resources.
+// GET /{{.StructName}}
+func (h *{{.StructName}}Handler) FindAll(c *gin.Context) {
+	// TODO: Fetch data from the service layer
+	
+	// Mock data for demonstration
+	mockData := []gin.H{
+		{"id": "1", "name": "Sample {{.StructName}} A"},
+		{"id": "2", "name": "Sample {{.StructName}} B"},
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": mockData,
+	})
+}
+
+// FindOne retrieves a single {{.StructName}} by its ID.
+// GET /{{.StructName}}/:id
+func (h *{{.StructName}}Handler) FindOne(c *gin.Context) {
+	id := c.Param("id")
+
+	// TODO: Call service to find by ID
+	
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Detail of {{.StructName}}",
+		"id":      id,
+	})
+}
+
+// Update modifies an existing {{.StructName}} resource.
+// PUT /{{.StructName}}/:id
+func (h *{{.StructName}}Handler) Update(c *gin.Context) {
+	id := c.Param("id")
+
+	// 1. Bind JSON Body
+	var req gin.H
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+		return
+	}
+
+	// TODO: Call service to update logic
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "{{.StructName}} updated successfully",
+		"id":      id,
+		"changes": req,
+	})
+}
+
+// Delete removes a {{.StructName}} resource.
+// DELETE /{{.StructName}}/:id
+func (h *{{.StructName}}Handler) Delete(c *gin.Context) {
+	id := c.Param("id")
+
+	// TODO: Call service to delete logic
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "{{.StructName}} deleted successfully",
+		"id":      id,
+	})
+}

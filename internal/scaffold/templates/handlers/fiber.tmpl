@@ -1,0 +1,118 @@
+package {{.PackageName}}
+
+import (
+	"github.com/gofiber/fiber/v2"
+)
+
+// {{.StructName}}Handler handles HTTP requests related to {{.StructName}}.
+type {{.StructName}}Handler struct {
+	// TODO: Inject Service Interface here.
+	// service {{.StructName}}Service
+}
+
+// New{{.StructName}}Handler creates a new instance of {{.StructName}}Handler.
+func New{{.StructName}}Handler() *{{.StructName}}Handler {
+	return &{{.StructName}}Handler{}
+}
+
+// RegisterRoutes registers the API endpoints for {{.StructName}}.
+// Usage in main: handler.RegisterRoutes(app)
+func (h *{{.StructName}}Handler) RegisterRoutes(router fiber.Router) {
+	// Grouping routes, e.g., /api/v1/products
+	// You can adjust the path prefix as needed
+	group := router.Group("/{{.StructName}}") 
+
+	group.Post("/", h.Create)
+	group.Get("/", h.FindAll)
+	group.Get("/:id", h.FindOne)
+	group.Put("/:id", h.Update)
+	group.Delete("/:id", h.Delete)
+}
+
+// Create handles the creation of a new {{.StructName}}.
+// POST /{{.StructName}}
+func (h *{{.StructName}}Handler) Create(c *fiber.Ctx) error {
+	// 1. Parse Request Body
+	type CreateRequest struct {
+		Name string `json:"name"`
+		// Add other fields here
+	}
+	
+	var req CreateRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	// 2. Call Service (TODO)
+	// err := h.service.Create(req)
+
+	// 3. Return Response
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "{{.StructName}} created successfully",
+		"data":    req,
+	})
+}
+
+// FindAll retrieves a list of {{.StructName}}.
+// GET /{{.StructName}}
+func (h *{{.StructName}}Handler) FindAll(c *fiber.Ctx) error {
+	// TODO: Get data from service
+	mockData := []fiber.Map{
+		{"id": 1, "name": "Sample {{.StructName}} 1"},
+		{"id": 2, "name": "Sample {{.StructName}} 2"},
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": mockData,
+	})
+}
+
+// FindOne retrieves a single {{.StructName}} by ID.
+// GET /{{.StructName}}/:id
+func (h *{{.StructName}}Handler) FindOne(c *fiber.Ctx) error {
+	id := c.Params("id")
+	
+	// TODO: Call service with ID
+	
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Detail of {{.StructName}}",
+		"id":      id,
+	})
+}
+
+// Update modifies an existing {{.StructName}}.
+// PUT /{{.StructName}}/:id
+func (h *{{.StructName}}Handler) Update(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	// Parse Body
+	var req fiber.Map
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	// TODO: Call service update
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "{{.StructName}} updated successfully",
+		"id":      id,
+		"changes": req,
+	})
+}
+
+// Delete removes a {{.StructName}}.
+// DELETE /{{.StructName}}/:id
+func (h *{{.StructName}}Handler) Delete(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	// TODO: Call service delete
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "{{.StructName}} deleted successfully",
+		"id":      id,
+	})
+}

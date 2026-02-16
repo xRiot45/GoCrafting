@@ -12,11 +12,11 @@ func Run(meta *core.ProjectMetadata, schematic, name string) error {
 	switch schematic {
 
 	// --- CORE ---
-	case "resource", "res":
-		return GenerateResource(meta, name)
+	// case "resource", "res":
+	// 	return GenerateResource(meta, name)
 
-	// case "handler", "h":
-	// 	return GenerateHandler(meta, name)
+	case "handler", "h":
+		return GenerateHandler(meta, name)
 
 	// case "service", "s":
 	// 	return GenerateService(meta, name)
