@@ -11,25 +11,32 @@ import (
 	"golang.org/x/text/language"
 )
 
-// GenerateHandler menentukan strategi template berdasarkan metadata project.
+// GenerateHandler generates a handler file based on project scale and framework.
 func GenerateHandler(meta *core.ProjectMetadata, name string) error {
 	lowerName := strings.ToLower(name)
 	titleName := cases.Title(language.English).String(lowerName)
 
-	var templateFile string
+	scaleFolder := strings.ToLower(meta.ProjectScale)
 
+	if scaleFolder != "small" && scaleFolder != "medium" && scaleFolder != "enterprise" {
+		return fmt.Errorf("project scale '%s' is not supported", meta.ProjectScale)
+	}
+
+	var templateFilename string
 	if meta.SelectedTemplate == "Simple API" {
-		templateFile = "handlers/net_http.tmpl"
+		templateFilename = "net_http.tmpl"
 	} else {
 		switch meta.SelectedFramework {
 		case "Fiber":
-			templateFile = "handlers/fiber.tmpl"
+			templateFilename = "fiber.tmpl"
 		case "Gin":
-			templateFile = "handlers/gin.tmpl"
+			templateFilename = "gin.tmpl"
 		default:
-			return fmt.Errorf("framework %s not supported for handler generation", meta.SelectedFramework)
+			return fmt.Errorf("framework '%s' not supported for handler generation", meta.SelectedFramework)
 		}
 	}
+
+	templatePath := filepath.Join(scaleFolder, "handlers", templateFilename)
 
 	targetDir := "internal/handlers"
 	if meta.ProjectScale == "Small" {
@@ -45,7 +52,7 @@ func GenerateHandler(meta *core.ProjectMetadata, name string) error {
 		ModuleName:  meta.ModuleName,
 	}
 
-	if err := renderFile(templateFile, targetPath, data); err != nil {
+	if err := renderFile(templatePath, targetPath, data); err != nil {
 		return err
 	}
 

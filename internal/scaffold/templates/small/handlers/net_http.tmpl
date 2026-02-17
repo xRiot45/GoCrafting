@@ -7,10 +7,11 @@ import (
 )
 
 // {{.StructName}}Handler handles HTTP requests for {{.StructName}} resources.
-// It uses the standard library "net/http".
+// It uses the standard library "net/http" with Go 1.22+ routing patterns.
 type {{.StructName}}Handler struct {
-	// TODO: Inject your service interface here.
-	// service {{.StructName}}Service
+	// For Small Scale projects, you can inject the Database instance directly.
+	// Example: db *sql.DB or db *gorm.DB
+	// Or leave it empty if you use a global DB variable.
 }
 
 // New{{.StructName}}Handler creates a new instance of {{.StructName}}Handler.
@@ -19,44 +20,44 @@ func New{{.StructName}}Handler() *{{.StructName}}Handler {
 }
 
 // RegisterRoutes registers the API endpoints for this handler to the provided ServeMux.
-// It uses Go 1.22+ routing patterns (Method + Path + Wildcards).
+// It utilizes Go 1.22+ routing patterns (Method + Path + Wildcards).
 //
 // Usage in main.go:
 //   mux := http.NewServeMux()
 //   handler := handlers.New{{.StructName}}Handler()
 //   handler.RegisterRoutes(mux)
 func (h *{{.StructName}}Handler) RegisterRoutes(mux *http.ServeMux) {
-	// Grouping isn't built-in like Fiber/Gin, but we prefix manually.
-	// Pattern: [METHOD] /path
-	
+	// Since net/http doesn't have built-in grouping like Gin/Fiber,
+	// we define a base path prefix manually.
 	basePath := "/{{.StructName}}"
 
-	mux.HandleFunc("POST " + basePath, h.Create)
-	mux.HandleFunc("GET " + basePath, h.FindAll)
-	mux.HandleFunc("GET " + basePath + "/{id}", h.FindOne)
-	mux.HandleFunc("PUT " + basePath + "/{id}", h.Update)
-	mux.HandleFunc("DELETE " + basePath + "/{id}", h.Delete)
+	// Register patterns: [METHOD] [PATH]
+	mux.HandleFunc("POST "+basePath, h.Create)
+	mux.HandleFunc("GET "+basePath, h.FindAll)
+	mux.HandleFunc("GET "+basePath+"/{id}", h.FindOne)
+	mux.HandleFunc("PUT "+basePath+"/{id}", h.Update)
+	mux.HandleFunc("DELETE "+basePath+"/{id}", h.Delete)
 }
 
 // Create handles the creation of a new {{.StructName}}.
 // POST /{{.StructName}}
 func (h *{{.StructName}}Handler) Create(w http.ResponseWriter, r *http.Request) {
-	// 1. Define Request Struct
+	// 1. Define Request Struct (DTO)
 	type CreateRequest struct {
 		Name string `json:"name"`
-		// Add validation tags or manual checks here
+		// Add other fields and validation logic here
 	}
 
 	var req CreateRequest
 
 	// 2. Decode JSON Body
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.writeError(w, http.StatusBadRequest, "Invalid request body")
+		h.writeError(w, http.StatusBadRequest, "Invalid request body: "+err.Error())
 		return
 	}
 
-	// 3. Call Service (TODO)
-	// result, err := h.service.Create(req)
+	// 3. Database Logic (TODO)
+	// Example: _, err := h.db.Exec("INSERT INTO ...", req.Name)
 
 	// 4. Return Response
 	response := map[string]interface{}{
@@ -69,7 +70,8 @@ func (h *{{.StructName}}Handler) Create(w http.ResponseWriter, r *http.Request) 
 // FindAll retrieves a list of {{.StructName}}.
 // GET /{{.StructName}}
 func (h *{{.StructName}}Handler) FindAll(w http.ResponseWriter, r *http.Request) {
-	// TODO: Fetch data from service
+	// TODO: Fetch data from the database
+	
 	mockData := []map[string]interface{}{
 		{"id": "1", "name": "Sample {{.StructName}} 1"},
 		{"id": "2", "name": "Sample {{.StructName}} 2"},
@@ -83,10 +85,10 @@ func (h *{{.StructName}}Handler) FindAll(w http.ResponseWriter, r *http.Request)
 // FindOne retrieves a single {{.StructName}} by ID.
 // GET /{{.StructName}}/{id}
 func (h *{{.StructName}}Handler) FindOne(w http.ResponseWriter, r *http.Request) {
-	// Get path value (Go 1.22+)
+	// Get path value using Go 1.22 feature
 	id := r.PathValue("id")
 
-	// TODO: Fetch single item by ID
+	// TODO: Fetch single item by ID from database
 
 	h.writeJSON(w, http.StatusOK, map[string]interface{}{
 		"message": "Detail of {{.StructName}}",
@@ -105,7 +107,7 @@ func (h *{{.StructName}}Handler) Update(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// TODO: Call service update logic
+	// TODO: Execute update query in database
 
 	h.writeJSON(w, http.StatusOK, map[string]interface{}{
 		"message": "{{.StructName}} updated successfully",
@@ -119,7 +121,7 @@ func (h *{{.StructName}}Handler) Update(w http.ResponseWriter, r *http.Request) 
 func (h *{{.StructName}}Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	// TODO: Call service delete logic
+	// TODO: Execute delete query in database
 
 	h.writeJSON(w, http.StatusOK, map[string]interface{}{
 		"message": "{{.StructName}} deleted successfully",
@@ -131,11 +133,12 @@ func (h *{{.StructName}}Handler) Delete(w http.ResponseWriter, r *http.Request) 
 // Helper Functions (Private)
 // ---------------------------------------------------------------------
 
-// writeJSON writes a JSON response with the given status code.
+// writeJSON writes a JSON response with the given status code and proper headers.
 func (h *{{.StructName}}Handler) writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if err := json.NewEncoder(w).Encode(data); err != nil {
+		// Log error to console if encoding fails
 		fmt.Printf("Error encoding JSON: %v\n", err)
 	}
 }

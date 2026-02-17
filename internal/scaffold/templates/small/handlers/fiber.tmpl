@@ -6,8 +6,9 @@ import (
 
 // {{.StructName}}Handler handles HTTP requests related to {{.StructName}}.
 type {{.StructName}}Handler struct {
-	// TODO: Inject Service Interface here.
-	// service {{.StructName}}Service
+	// For Small Scale, you can inject *gorm.DB directly here
+	// Or leave it blank if using a global DB instance.
+	// db *gorm.DB
 }
 
 // New{{.StructName}}Handler creates a new instance of {{.StructName}}Handler.
@@ -16,10 +17,12 @@ func New{{.StructName}}Handler() *{{.StructName}}Handler {
 }
 
 // RegisterRoutes registers the API endpoints for {{.StructName}}.
-// Usage in main: handler.RegisterRoutes(app)
+// Usage in main.go: 
+//   handler := handlers.New{{.StructName}}Handler()
+//   handler.RegisterRoutes(app)
 func (h *{{.StructName}}Handler) RegisterRoutes(router fiber.Router) {
-	// Grouping routes, e.g., /api/v1/products
-	// You can adjust the path prefix as needed
+	// Grouping routes. Example: /api/v1/user
+	// Note: You might want to lowercase the path, e.g., "/user"
 	group := router.Group("/{{.StructName}}") 
 
 	group.Post("/", h.Create)
@@ -32,7 +35,7 @@ func (h *{{.StructName}}Handler) RegisterRoutes(router fiber.Router) {
 // Create handles the creation of a new {{.StructName}}.
 // POST /{{.StructName}}
 func (h *{{.StructName}}Handler) Create(c *fiber.Ctx) error {
-	// 1. Parse Request Body
+	// 1. Define Request Body Struct (DTO)
 	type CreateRequest struct {
 		Name string `json:"name"`
 		// Add other fields here
@@ -42,12 +45,13 @@ func (h *{{.StructName}}Handler) Create(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
+			"detail": err.Error(),
 		})
 	}
 
-	// 2. Call Service (TODO)
-	// err := h.service.Create(req)
-
+	// 2. Database Logic (TODO)
+	// Example: db.Create(&model)
+	
 	// 3. Return Response
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "{{.StructName}} created successfully",
@@ -58,7 +62,7 @@ func (h *{{.StructName}}Handler) Create(c *fiber.Ctx) error {
 // FindAll retrieves a list of {{.StructName}}.
 // GET /{{.StructName}}
 func (h *{{.StructName}}Handler) FindAll(c *fiber.Ctx) error {
-	// TODO: Get data from service
+	// TODO: Fetch data from database
 	mockData := []fiber.Map{
 		{"id": 1, "name": "Sample {{.StructName}} 1"},
 		{"id": 2, "name": "Sample {{.StructName}} 2"},
@@ -74,7 +78,7 @@ func (h *{{.StructName}}Handler) FindAll(c *fiber.Ctx) error {
 func (h *{{.StructName}}Handler) FindOne(c *fiber.Ctx) error {
 	id := c.Params("id")
 	
-	// TODO: Call service with ID
+	// TODO: Fetch single record from database by ID
 	
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Detail of {{.StructName}}",
@@ -95,7 +99,7 @@ func (h *{{.StructName}}Handler) Update(c *fiber.Ctx) error {
 		})
 	}
 
-	// TODO: Call service update
+	// TODO: Update record in database
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "{{.StructName}} updated successfully",
@@ -109,7 +113,7 @@ func (h *{{.StructName}}Handler) Update(c *fiber.Ctx) error {
 func (h *{{.StructName}}Handler) Delete(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	// TODO: Call service delete
+	// TODO: Delete record from database
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "{{.StructName}} deleted successfully",
